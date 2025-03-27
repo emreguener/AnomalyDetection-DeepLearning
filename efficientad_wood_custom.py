@@ -50,9 +50,7 @@ print("CUDA version:", torch.version.cuda)
   --imagenet_train_path none \
   --train_steps 2400
 
-"""AUC: 0.8869 | F1-score: 0.8451 | Precision: 0.8451 | Recall: 0.8451
-
-train steps = 3200, auc = 69.19
+"""train steps = 3200, auc = 0.8879, F1 = 0.8310
 """
 
 !python /content/drive/MyDrive/EfficientAD/efficientad.py \
