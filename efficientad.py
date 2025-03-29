@@ -226,13 +226,20 @@ def main():
                 student=student, autoencoder=autoencoder,
                 teacher_mean=teacher_mean, teacher_std=teacher_std,
                 desc='Intermediate map normalization')
-            auc = test(
+            auc, f1, precision, recall, cm = test(
                 test_set=test_set, teacher=teacher, student=student,
                 autoencoder=autoencoder, teacher_mean=teacher_mean,
                 teacher_std=teacher_std, q_st_start=q_st_start,
                 q_st_end=q_st_end, q_ae_start=q_ae_start, q_ae_end=q_ae_end,
                 test_output_dir=None, desc='Intermediate inference')
-            print('Intermediate image auc: {:.4f}'.format(auc))
+            print("\n📍 Ara Değerlendirme (Adım: {})".format(iteration))
+            print(f"AUC Score        : {auc:.4f}")
+            print(f"F1 Score         : {f1:.4f}")
+            print(f"Precision        : {precision:.4f}")
+            print(f"Recall           : {recall:.4f}")
+            print("Confusion Matrix :\n", cm)
+
+
 
             # teacher frozen
             teacher.eval()
@@ -252,15 +259,19 @@ def main():
         validation_loader=validation_loader, teacher=teacher, student=student,
         autoencoder=autoencoder, teacher_mean=teacher_mean,
         teacher_std=teacher_std, desc='Final map normalization')
-    auc, f1 = test(
+    auc, f1, precision, recall, cm = test(
     test_set=test_set, teacher=teacher, student=student,
     autoencoder=autoencoder, teacher_mean=teacher_mean,
     teacher_std=teacher_std, q_st_start=q_st_start, q_st_end=q_st_end,
     q_ae_start=q_ae_start, q_ae_end=q_ae_end,
     test_output_dir=test_output_dir, desc='Final inference')
+    print("\n✅ Final Anomaly Detection Sonuçları")
+    print(f"Final AUC Score        : {auc:.4f}")
+    print(f"Final F1 Score         : {f1:.4f}")
+    print(f"Final Precision        : {precision:.4f}")
+    print(f"Final Recall           : {recall:.4f}")
+    print("Final Confusion Matrix :\n", cm)
 
-    #print('Final image AUC: {:.4f}'.format(auc))
-    #print('Final image F1-score: {:.4f}'.format(f1))
 
 
 def test(test_set, teacher, student, autoencoder, teacher_mean, teacher_std,
@@ -298,25 +309,33 @@ def test(test_set, teacher, student, autoencoder, teacher_mean, teacher_std,
         y_true.append(y_true_image)
         y_score.append(y_score_image)
     # f1 skor ile hesaplama için 
-    from sklearn.metrics import roc_auc_score, f1_score, precision_score, recall_score
+    from sklearn.metrics import roc_auc_score, f1_score, precision_score, recall_score, roc_curve, confusion_matrix
 
+    # ROC AUC
     auc = roc_auc_score(y_true=y_true, y_score=y_score)
 
-    # Eşik değeri belirle (örnek: medyan)
-    threshold = np.median(y_score)
+    # Optimal eşik (Youden's index)
+    fpr, tpr, thresholds = roc_curve(y_true, y_score)
+    youden_index = tpr - fpr
+    best_threshold = thresholds[np.argmax(youden_index)]
 
-    # Anomali skorunu sınıflandırmaya çevir
-    y_pred = [1 if s >= threshold else 0 for s in y_score]
+    y_pred = [1 if s >= best_threshold else 0 for s in y_score]
 
-    # F1, Precision, Recall hesapla
+    # Metrikler
     f1 = f1_score(y_true, y_pred)
     precision = precision_score(y_true, y_pred)
     recall = recall_score(y_true, y_pred)
+    cm = confusion_matrix(y_true, y_pred)
 
-    print(f"Final image AUC: {auc:.4f}")
-    print(f"Final image F1-score: {f1:.4f}")
+    print("\n\u2705 Anomaly Detection Sonuclar\u0131")
+    print(f"AUC Score          : {auc:.4f}")
+    print(f"F1 Score           : {f1:.4f}")
+    print(f"Precision          : {precision:.4f}")
+    print(f"Recall             : {recall:.4f}")
+    print(f"Optimal Threshold  : {best_threshold:.4f}")
+    print("Confusion Matrix:\n", cm)
 
-    return auc * 100, f1
+    return auc, f1, precision, recall, cm
 
 @torch.no_grad()
 def predict(image, teacher, student, autoencoder, teacher_mean, teacher_std,
