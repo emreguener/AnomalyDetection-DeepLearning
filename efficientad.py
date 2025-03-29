@@ -67,6 +67,9 @@ def main():
 
     config = get_argparse()
 
+    train_losses = []
+    val_losses = []
+
     if config.dataset == 'mvtec_ad':
         dataset_path = config.mvtec_ad_path
     elif config.dataset == 'mvtec_loco':
@@ -74,80 +77,60 @@ def main():
     else:
         raise Exception('Unknown config.dataset')
 
-    pretrain_penalty = True
-    if config.imagenet_train_path == 'none':
-        pretrain_penalty = False
+    pretrain_penalty = config.imagenet_train_path != 'none'
 
-    # create output dir
-    train_output_dir = os.path.join(config.output_dir, 'trainings',
-                                    config.dataset, config.subdataset)
-    test_output_dir = os.path.join(config.output_dir, 'anomaly_maps',
-                                   config.dataset, config.subdataset, 'test')
-    os.makedirs(train_output_dir, exist_ok=True) #hata vermesin diye
-    os.makedirs(test_output_dir, exist_ok=True) #hata vermesin diye
+    train_output_dir = os.path.join(config.output_dir, 'trainings', config.dataset, config.subdataset)
+    test_output_dir = os.path.join(config.output_dir, 'anomaly_maps', config.dataset, config.subdataset, 'test')
+    os.makedirs(train_output_dir, exist_ok=True)
+    os.makedirs(test_output_dir, exist_ok=True)
 
-
-    # load data
     full_train_set = ImageFolderWithoutTarget(
         os.path.join(dataset_path, config.subdataset, 'train'),
         transform=transforms.Lambda(train_transform))
     test_set = ImageFolderWithPath(
         os.path.join(dataset_path, config.subdataset, 'test'))
+
     if config.dataset == 'mvtec_ad':
-        # mvtec dataset paper recommend 10% validation set
         train_size = int(0.9 * len(full_train_set))
         validation_size = len(full_train_set) - train_size
         rng = torch.Generator().manual_seed(seed)
-        train_set, validation_set = torch.utils.data.random_split(full_train_set,
-                                                           [train_size,
-                                                            validation_size],
-                                                           rng)
-    elif config.dataset == 'mvtec_loco':
+        train_set, validation_set = torch.utils.data.random_split(full_train_set, [train_size, validation_size], rng)
+    else:
         train_set = full_train_set
         validation_set = ImageFolderWithoutTarget(
             os.path.join(dataset_path, config.subdataset, 'validation'),
             transform=transforms.Lambda(train_transform))
-    else:
-        raise Exception('Unknown config.dataset')
 
-
-    train_loader = DataLoader(train_set, batch_size=1, shuffle=True,
-                              num_workers=4, pin_memory=True)
+    train_loader = DataLoader(train_set, batch_size=1, shuffle=True, num_workers=4, pin_memory=True)
     train_loader_infinite = InfiniteDataloader(train_loader)
     validation_loader = DataLoader(validation_set, batch_size=1)
 
     if pretrain_penalty:
-        # load pretraining data for penalty
         penalty_transform = transforms.Compose([
             transforms.Resize((2 * image_size, 2 * image_size)),
             transforms.RandomGrayscale(0.3),
             transforms.CenterCrop(image_size),
             transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224,
-                                                                  0.225])
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
         ])
-        penalty_set = ImageFolderWithoutTarget(config.imagenet_train_path,
-                                               transform=penalty_transform)
-        penalty_loader = DataLoader(penalty_set, batch_size=1, shuffle=True,
-                                    num_workers=4, pin_memory=True)
+        penalty_set = ImageFolderWithoutTarget(config.imagenet_train_path, transform=penalty_transform)
+        penalty_loader = DataLoader(penalty_set, batch_size=1, shuffle=True, num_workers=4, pin_memory=True)
         penalty_loader_infinite = InfiniteDataloader(penalty_loader)
     else:
         penalty_loader_infinite = itertools.repeat(None)
 
-    # create models
+    # Model oluşturma
     if config.model_size == 'small':
         teacher = get_pdn_small(out_channels)
         student = get_pdn_small(2 * out_channels)
-    elif config.model_size == 'medium':
+    else:
         teacher = get_pdn_medium(out_channels)
         student = get_pdn_medium(2 * out_channels)
-    else:
-        raise Exception()
+
     state_dict = torch.load(config.weights, map_location='cpu')
     teacher.load_state_dict(state_dict)
     autoencoder = get_autoencoder(out_channels)
 
-    # teacher frozen
     teacher.eval()
     student.train()
     autoencoder.train()
@@ -159,22 +142,25 @@ def main():
 
     teacher_mean, teacher_std = teacher_normalization(teacher, train_loader)
 
-    optimizer = torch.optim.Adam(itertools.chain(student.parameters(),
-                                                 autoencoder.parameters()),
+    optimizer = torch.optim.Adam(itertools.chain(student.parameters(), autoencoder.parameters()),
                                  lr=1e-4, weight_decay=1e-5)
-    scheduler = torch.optim.lr_scheduler.StepLR(
-        optimizer, step_size=int(0.95 * config.train_steps), gamma=0.1)
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=int(0.95 * config.train_steps), gamma=0.1)
+
     tqdm_obj = tqdm(range(config.train_steps))
-    for iteration, (image_st, image_ae), image_penalty in zip(
-            tqdm_obj, train_loader_infinite, penalty_loader_infinite):
+    for iteration in tqdm_obj:
+        (image_st, image_ae) = next(train_loader_infinite)
+        image_penalty = next(penalty_loader_infinite)
+
         if on_gpu:
             image_st = image_st.cuda()
             image_ae = image_ae.cuda()
             if image_penalty is not None:
                 image_penalty = image_penalty.cuda()
+
         with torch.no_grad():
             teacher_output_st = teacher(image_st)
             teacher_output_st = (teacher_output_st - teacher_mean) / teacher_std
+
         student_output_st = student(image_st)[:, :out_channels]
         distance_st = (teacher_output_st - student_output_st) ** 2
         d_hard = torch.quantile(distance_st, q=0.999)
@@ -182,7 +168,7 @@ def main():
 
         if image_penalty is not None:
             student_output_penalty = student(image_penalty)[:, :out_channels]
-            loss_penalty = torch.mean(student_output_penalty**2)
+            loss_penalty = torch.mean(student_output_penalty ** 2)
             loss_st = loss_hard + loss_penalty
         else:
             loss_st = loss_hard
@@ -191,12 +177,15 @@ def main():
         with torch.no_grad():
             teacher_output_ae = teacher(image_ae)
             teacher_output_ae = (teacher_output_ae - teacher_mean) / teacher_std
+
         student_output_ae = student(image_ae)[:, out_channels:]
-        distance_ae = (teacher_output_ae - ae_output)**2
-        distance_stae = (ae_output - student_output_ae)**2
+        distance_ae = (teacher_output_ae - ae_output) ** 2
+        distance_stae = (ae_output - student_output_ae) ** 2
         loss_ae = torch.mean(distance_ae)
         loss_stae = torch.mean(distance_stae)
         loss_total = loss_st + loss_ae + loss_stae
+
+        train_losses.append(loss_total.item())
 
         optimizer.zero_grad()
         loss_total.backward()
@@ -204,19 +193,43 @@ def main():
         scheduler.step()
 
         if iteration % 10 == 0:
-            tqdm_obj.set_description(
-                "Current loss: {:.4f}  ".format(loss_total.item()))
+            tqdm_obj.set_description(f"Current loss: {loss_total.item():.4f}")
 
         if iteration % 1000 == 0:
-            torch.save(teacher, os.path.join(train_output_dir,
-                                             'teacher_tmp.pth'))
-            torch.save(student, os.path.join(train_output_dir,
-                                             'student_tmp.pth'))
-            torch.save(autoencoder, os.path.join(train_output_dir,
-                                                 'autoencoder_tmp.pth'))
+            torch.save(teacher, os.path.join(train_output_dir, 'teacher_tmp.pth'))
+            torch.save(student, os.path.join(train_output_dir, 'student_tmp.pth'))
+            torch.save(autoencoder, os.path.join(train_output_dir, 'autoencoder_tmp.pth'))
 
         if iteration % 10000 == 0 and iteration > 0:
-            # run intermediate evaluation
+            # Validation loss hesaplama
+            val_total_loss = 0
+            val_batches = 0
+            for val_image, _ in validation_loader:
+                if on_gpu:
+                    val_image = val_image.cuda()
+                with torch.no_grad():
+                    teacher_output_val = teacher(val_image)
+                    teacher_output_val = (teacher_output_val - teacher_mean) / teacher_std
+                    student_output_val = student(val_image)[:, :out_channels]
+                    ae_output_val = autoencoder(val_image)
+                    distance_val = (teacher_output_val - student_output_val) ** 2
+                    d_val = torch.quantile(distance_val, q=0.999)
+                    loss_val_hard = torch.mean(distance_val[distance_val >= d_val])
+
+                    teacher_output_ae_val = teacher(val_image)
+                    teacher_output_ae_val = (teacher_output_ae_val - teacher_mean) / teacher_std
+                    student_output_ae_val = student(val_image)[:, out_channels:]
+                    distance_ae_val = (teacher_output_ae_val - ae_output_val)**2
+                    distance_stae_val = (ae_output_val - student_output_ae_val)**2
+                    loss_val_ae = torch.mean(distance_ae_val)
+                    loss_val_stae = torch.mean(distance_stae_val)
+
+                    loss_val_total = loss_val_hard + loss_val_ae + loss_val_stae
+                    val_total_loss += loss_val_total.item()
+                    val_batches += 1
+            val_losses.append(val_total_loss / val_batches)
+
+            # Ara değerlendirme
             teacher.eval()
             student.eval()
             autoencoder.eval()
@@ -232,45 +245,57 @@ def main():
                 teacher_std=teacher_std, q_st_start=q_st_start,
                 q_st_end=q_st_end, q_ae_start=q_ae_start, q_ae_end=q_ae_end,
                 test_output_dir=None, desc='Intermediate inference')
-            print("\n📍 Ara Değerlendirme (Adım: {})".format(iteration))
+            print(f"\n📍 Ara Değerlendirme (Adım: {iteration})")
             print(f"AUC Score        : {auc:.4f}")
             print(f"F1 Score         : {f1:.4f}")
             print(f"Precision        : {precision:.4f}")
             print(f"Recall           : {recall:.4f}")
             print("Confusion Matrix :\n", cm)
 
-
-
-            # teacher frozen
-            teacher.eval()
+            teacher.train()
             student.train()
             autoencoder.train()
 
+    # Eğitim sonrası
     teacher.eval()
     student.eval()
     autoencoder.eval()
 
     torch.save(teacher, os.path.join(train_output_dir, 'teacher_final.pth'))
     torch.save(student, os.path.join(train_output_dir, 'student_final.pth'))
-    torch.save(autoencoder, os.path.join(train_output_dir,
-                                         'autoencoder_final.pth'))
+    torch.save(autoencoder, os.path.join(train_output_dir, 'autoencoder_final.pth'))
 
     q_st_start, q_st_end, q_ae_start, q_ae_end = map_normalization(
         validation_loader=validation_loader, teacher=teacher, student=student,
         autoencoder=autoencoder, teacher_mean=teacher_mean,
         teacher_std=teacher_std, desc='Final map normalization')
     auc, f1, precision, recall, cm = test(
-    test_set=test_set, teacher=teacher, student=student,
-    autoencoder=autoencoder, teacher_mean=teacher_mean,
-    teacher_std=teacher_std, q_st_start=q_st_start, q_st_end=q_st_end,
-    q_ae_start=q_ae_start, q_ae_end=q_ae_end,
-    test_output_dir=test_output_dir, desc='Final inference')
+        test_set=test_set, teacher=teacher, student=student,
+        autoencoder=autoencoder, teacher_mean=teacher_mean,
+        teacher_std=teacher_std, q_st_start=q_st_start, q_st_end=q_st_end,
+        q_ae_start=q_ae_start, q_ae_end=q_ae_end,
+        test_output_dir=test_output_dir, desc='Final inference')
     print("\n✅ Final Anomaly Detection Sonuçları")
     print(f"Final AUC Score        : {auc:.4f}")
     print(f"Final F1 Score         : {f1:.4f}")
     print(f"Final Precision        : {precision:.4f}")
     print(f"Final Recall           : {recall:.4f}")
     print("Final Confusion Matrix :\n", cm)
+
+    # Grafik çizimi
+    import matplotlib.pyplot as plt
+    plt.figure(figsize=(10, 5))
+    plt.plot(train_losses, label='Train Loss', alpha=0.7)
+    plt.plot(np.linspace(0, len(train_losses), len(val_losses)), val_losses, label='Validation Loss', color='orange', marker='o')
+    plt.xlabel('Training Steps')
+    plt.ylabel('Loss')
+    plt.title('Training vs Validation Loss')
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+    plt.savefig(os.path.join(train_output_dir, 'loss_curve.png'))
+    plt.close()
+
 
 
 
