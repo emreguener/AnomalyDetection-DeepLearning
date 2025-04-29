@@ -18,12 +18,13 @@ def build_train_data_loader(args, config):
         input_size=config["input_size"],
         is_train=True,
     )
+    print(f"✔️ DEBUG: Eğitim veri seti uzunluğu: {len(train_dataset)}")
     return torch.utils.data.DataLoader(
         train_dataset,
         batch_size=const.BATCH_SIZE,
         shuffle=True,
         num_workers=4,
-        drop_last=True,
+        drop_last=False  # train dataloader'da drop_last=True olmalı,
     )
 
 
@@ -86,19 +87,24 @@ def train_one_epoch(dataloader, model, optimizer, epoch):
                 )
             )
 
-
 def eval_once(dataloader, model):
     model.eval()
     print("Test loader uzunluğu:", len(dataloader))
     auroc_metric = metrics.ROC_AUC()
+
     for data, targets in dataloader:
         data, targets = data.cuda(), targets.cuda()
+
         with torch.no_grad():
             ret = model(data)
-        outputs = ret["anomaly_map"].cpu().detach()
-        outputs = outputs.flatten()
-        targets = targets.flatten()
-        auroc_metric.update((outputs, targets))
+            outputs = ret["anomaly_map"].cpu().detach().flatten()
+
+            # Maskeleri binary hale getir (eşik koyarak)
+            targets = targets.cpu().detach()
+            targets = (targets > 0.5).float().flatten()  # 0.5 eşiği ile binary yap
+
+            auroc_metric.update((outputs, targets))
+
     auroc = auroc_metric.compute()
     print("AUROC: {}".format(auroc))
 

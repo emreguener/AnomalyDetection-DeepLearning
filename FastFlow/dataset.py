@@ -41,26 +41,27 @@ class MVTecDataset(torch.utils.data.Dataset):
     def __getitem__(self, index):
         image_file = self.image_files[index]
 
-        # Görseli oku ve 3 kanala dönüştür
+        # Görüntüyü yükle
         image = Image.open(image_file).convert("RGB")
         image = self.image_transform(image)
 
         if self.is_train:
             return image
         else:
-            # GOOD sınıfıysa → boş maske
             if os.path.dirname(image_file).endswith("good"):
-                target = Image.new("L", (image.shape[-1], image.shape[-2]))  # siyah maske
+                target = Image.new("L", (image.shape[2], image.shape[1]))
+                target = self.target_transform(target)
             else:
-                # Maske yolu: test/defect/ → ground_truth/defect/ ve .jpg → .png
-                target_path = image_file.replace("/test/defect/", "/ground_truth/defect/")
-                target_path = os.path.splitext(target_path)[0] + "_mask.jpg"  # .jpg → .png
+                target_path = image_file.replace("/test/defect/", "/ground/defect/")
+                target_path = os.path.splitext(target_path)[0] + ".jpg"
 
-                try:
-                    target = Image.open(target_path)
-                    target = self.target_transform(target)
-                except FileNotFoundError:
-                    print(f"❌ Maske dosyası bulunamadı: {target_path}")
-                    raise
+                if not os.path.exists(target_path):
+                    # Eğer maske bulunamazsa boş bir maske döndür
+                    print(f"❌ Maske bulunamadı, boş maske kullanılıyor: {target_path}")
+                    target = Image.new("L", (image.shape[2], image.shape[1]))
+                else:
+                    target = Image.open(target_path).convert("L")
+
+                target = self.target_transform(target)
 
             return image, target
