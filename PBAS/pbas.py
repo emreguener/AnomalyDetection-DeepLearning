@@ -381,11 +381,13 @@ class PBAS(torch.nn.Module):
             mask = (mask * 255).astype('uint8')
             mask = cv2.applyColorMap(mask, cv2.COLORMAP_JET)
 
-            img_up = np.hstack([defect, target, mask])
-            img_up = cv2.resize(img_up, (256 * 3, 256))
             full_path = './results/' + path + '/' + name + '/'
             utils.del_remake_dir(full_path, del_flag=False)
-            cv2.imwrite(full_path + str(i + 1).zfill(3) + '.png', img_up)
+
+            cv2.imwrite(full_path + str(i + 1).zfill(3) + '_input.png', defect)
+            cv2.imwrite(full_path + str(i + 1).zfill(3) + '_gt.png', target)
+            cv2.imwrite(full_path + str(i + 1).zfill(3) + '_heatmap.png', mask)
+
 
         return image_auroc, image_ap, pixel_auroc, pixel_ap, pixel_pro
 
