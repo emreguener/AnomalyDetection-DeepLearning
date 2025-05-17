@@ -28,17 +28,27 @@ from skimage.measure import label, regionprops
 
 from video_dataset import Label_loader
 from UniNet_lib.mechanism import weighted_decision_mechanism
+from scipy.ndimage import gaussian_filter
+
+from utils import rescale  # varsa
+
 
 
 def evaluation_indusAD(c, model, dataloader, device):
-    from sklearn.metrics import roc_auc_score, precision_recall_curve, confusion_matrix, f1_score, accuracy_score
+    from sklearn.metrics import (
+        roc_auc_score,
+        precision_recall_curve,
+        confusion_matrix,
+        f1_score,
+        accuracy_score
+    )
     import numpy as np
     import time
     import torch.nn.functional as F
+    from scipy.ndimage import gaussian_filter
 
     model.train_or_eval(type='eval')
     n = model.n
-    is_similarity = c.weighted_decision_mechanism
     gt_list_px = []
     gt_list_sp = []
     output_list = [list() for _ in range(n * 3)]
@@ -46,7 +56,7 @@ def evaluation_indusAD(c, model, dataloader, device):
 
     start_time = time.time()
     with torch.no_grad():
-        for idx, (sample, label, gt) in enumerate(dataloader):
+        for sample, label, gt in dataloader:
             gt_list_sp.extend(t2np(label))
             gt_list_px.extend(t2np(gt))
             weights_cnt += 1
@@ -59,39 +69,54 @@ def evaluation_indusAD(c, model, dataloader, device):
                 output_list[l].append(output)
 
         fps = len(dataloader.dataset) / (time.time() - start_time)
-        print("fps:", fps, len(dataloader.dataset))
+        print(f"🕒 FPS: {fps:.2f}")
 
+        # Weighted scoring
         anomaly_score, anomaly_map = weighted_decision_mechanism(
             weights_cnt, output_list, c.alpha, c.beta
         )
 
+        # Gaussian smoothing (optional)
+        # anomaly_map = gaussian_filter(anomaly_map, sigma=2)
+
+        # Prepare ground truth
         gt_label = np.asarray(gt_list_sp, dtype=np.bool_)
         gt_mask = np.squeeze(np.asarray(gt_list_px, dtype=np.bool_), axis=1)
 
         print(f"✅ gt_mask max: {gt_mask.max()}, anomaly_map max: {anomaly_map.max()}")
 
+        # AUROC metrics
         auroc_px = round(roc_auc_score(gt_mask.flatten(), anomaly_map.flatten()) * 100, 1)
         auroc_sp = round(roc_auc_score(gt_label, anomaly_score) * 100, 1)
 
+        # PRO score
+        pro = round(eval_seg_pro(gt_mask, anomaly_map), 1)
+
+        # Best threshold (F1-based)
         precision, recall, thresholds = precision_recall_curve(gt_label, anomaly_score)
         f1s = 2 * precision * recall / (precision + recall + 1e-8)
         best_idx = np.argmax(f1s)
         best_thresh = thresholds[best_idx] if thresholds.size > 0 else 0.5
-        print(f"🔍 Best threshold: {best_thresh}")
+
+        if best_thresh > anomaly_map.max():
+            print(f"⚠️ Threshold {best_thresh:.4f} > anomaly_map.max {anomaly_map.max():.4f} — clipping")
+            best_thresh = anomaly_map.max()
+
+        print(f"🔍 Best threshold (F1-max): {best_thresh:.4f}")
 
         pred_labels = (np.array(anomaly_score) > best_thresh).astype(int)
         gt_labels = np.array(gt_label).astype(int)
 
         cm = confusion_matrix(gt_labels, pred_labels)
-        print("Confusion Matrix (Image-Level):")
-        print(cm)
+        print("📊 Confusion Matrix (Image-Level):\n", cm)
 
         f1 = f1_score(gt_labels, pred_labels)
         acc = accuracy_score(gt_labels, pred_labels)
-        print(f"F1 Score: {f1:.3f} | Accuracy: {acc:.3f}")
+        print(f"✅ F1 Score: {f1:.3f} | Accuracy: {acc:.3f}")
 
+        # IoU calculation
         pred_masks = (anomaly_map > best_thresh).astype(np.uint8)
-        print(f"✅ pred_masks unique values: {np.unique(pred_masks)}")
+        print(f"🧩 pred_masks unique values: {np.unique(pred_masks)}")
 
         ious = []
         for i in range(len(gt_mask)):
@@ -99,17 +124,17 @@ def evaluation_indusAD(c, model, dataloader, device):
                 continue
             intersection = np.logical_and(gt_mask[i], pred_masks[i]).sum()
             union = np.logical_or(gt_mask[i], pred_masks[i]).sum()
-            iou = intersection / (union + 1e-8)
-            ious.append(iou)
+            ious.append(intersection / (union + 1e-8))
 
         if ious:
             mean_iou = np.mean(ious)
-            print(f"\n📏 Mean IoU (Defect Images Only): {mean_iou:.4f}")
+            print(f"📏 Mean IoU (Defect Images Only): {mean_iou:.4f}")
         else:
             mean_iou = 0.0
-            print("\n🚫 No defect images found for IoU calculation.")
+            print("🚫 No defect images found for IoU calculation.")
 
-    return auroc_px, auroc_sp, mean_iou
+    return auroc_px, auroc_sp, pro
+
 
 
 
@@ -150,33 +175,48 @@ def evaluation_vad(c, model, dataloader, device):
     return auroc_sp, f1, acc
 
 
-def eval_seg_pro(gt_mask, anomaly_score_map, max_step=800):
-    expect_fpr = 0.3    # default 30%
+def eval_seg_pro(gt_mask, anomaly_score_map, max_step=300):
+    expect_fpr = 0.2  # 🎯 Daha az false positive hedefle
 
+    # === 🔧 Anomaly map'i normalize et ve yumuşat ===
+    anomaly_score_map = (anomaly_score_map - anomaly_score_map.min()) / \
+                        (anomaly_score_map.max() - anomaly_score_map.min() + 1e-8)
+
+    anomaly_score_map = gaussian_filter(anomaly_score_map, sigma=2)
+
+    # === 🔎 Threshold aralığını oluştur ===
     max_th = anomaly_score_map.max()
     min_th = anomaly_score_map.min()
     delta = (max_th - min_th) / max_step
     threds = np.arange(min_th, max_th, delta).tolist()
 
+    # === 🎯 Paralel olarak her threshold için PRO ve FPR hesapla ===
     pool = Pool(8)
     ret = pool.map(partial(single_process, anomaly_score_map, gt_mask), threds)
     pool.close()
+
+    # === 🔬 İstatistikleri ayıkla ===
     pros_mean = []
     fprs = []
     for pro_mean, fpr in ret:
         pros_mean.append(pro_mean)
         fprs.append(fpr)
+
     pros_mean = np.array(pros_mean)
     fprs = np.array(fprs)
-    # expect_fpr = sum(fprs) / len(fprs)
-    idx = fprs < expect_fpr  # find the indexs of fprs that is less than expect_fpr (default 0.3)
+
+    # === 🔧 AUPRO hesaplaması (beklenen FPR altındakiler) ===
+    idx = fprs < expect_fpr
     fprs_selected = fprs[idx]
-    fprs_selected = rescale(fprs_selected)  # rescale fpr [0,0.3] -> [0, 1]
     pros_mean_selected = pros_mean[idx]
+
+    if len(fprs_selected) == 0:
+        return 0.0  # hiçbir FPR < expect_fpr değilse AUPRO sıfır olur
+
+    fprs_selected = rescale(fprs_selected)  # [0, expect_fpr] → [0, 1]
     loc_pro_auc = auc(fprs_selected, pros_mean_selected) * 100
 
     return loc_pro_auc
-
 
 def single_process(anomaly_score_map, gt_mask, thred):
     binary_score_maps = np.zeros_like(anomaly_score_map, dtype=np.bool_)
