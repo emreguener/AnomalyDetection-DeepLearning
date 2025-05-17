@@ -667,7 +667,27 @@ class SimpleNet(torch.nn.Module):
 
         def mask_transform(mask):
             return data.dataset.transform_mask(mask).numpy()
+        import matplotlib.pyplot as plt
+        import os
 
+        import cv2
+
+        save_dir = './saved_heatmaps'
+        os.makedirs(save_dir, exist_ok=True)
+
+        for idx, seg in enumerate(segmentations):
+            heatmap = np.array(seg)
+
+            # Normalize (0-255 arası skala)
+            norm_heatmap = (heatmap - heatmap.min()) / (heatmap.max() - heatmap.min() + 1e-8)
+            norm_heatmap = (norm_heatmap * 255).astype(np.uint8)
+
+            # Apply colormap (viridis)
+            colored = cv2.applyColorMap(norm_heatmap, cv2.COLORMAP_VIRIDIS)
+
+            # Save
+            save_path = os.path.join(save_dir, f"heatmap_{idx:03d}.png")
+            cv2.imwrite(save_path, colored)
         plot_segmentation_images(
             './output',
             image_paths,
