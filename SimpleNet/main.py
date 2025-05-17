@@ -96,7 +96,10 @@ def run(
                 i_auroc, p_auroc, pro_auroc = SimpleNet.train(dataloaders["training"], dataloaders["testing"])
             else:
                 # Test modunda doğrudan test() metodunu çağır ve metrikleri döndür:
-                i_auroc, p_auroc, pro_auroc = SimpleNet.test(dataloaders["training"], dataloaders["testing"], save_segmentation_images=save_segmentation_images)
+                i_auroc, p_auroc = SimpleNet.test(dataloaders["training"], dataloaders["testing"], save_segmentation_images=save_segmentation_images)
+                pro_auroc = np.nan
+
+
 
             result_collect.append(
                 {
@@ -109,7 +112,8 @@ def run(
 
             for key, item in result_collect[-1].items():
                 if key != "dataset_name":
-                    LOGGER.info("{0}: {1:3.3f}".format(key, item))
+                    LOGGER.info(f"{key}: {item:.3f}" if isinstance(item, float) else f"{key}: {item}")
+
 
         LOGGER.info("\n\n-----\n")
 
