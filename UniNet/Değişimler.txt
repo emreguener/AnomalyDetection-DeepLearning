@@ -1,0 +1,19 @@
+İlk hali ile çalıştırılırken main-dataset-train.py dosyalarında kendi dosya isimlendirmemiz için düzeltmeler yapıldı.
+İkinci olarak Loos Function - Optimizer'ı güncellendi ancak IoU ve F1 değerleri şu ankine yakın gelse de maxp_pro değeri düşük geldi
+Üçüncü olarak "Threshold" için best threshold fonksiyonu ile yapıldığında ve anomaly sonuçları normalize edilince 
+  Anomaly score range: 1.4319341 2.729589
+✨ Best Threshold (image-level): 0.5000
+🧩 Image-level F1: 0.898
+📏 Image-level IoU: 0.8148
+📊 Confusion Matrix:
+[[60 10]
+ [ 5 66]]
+
+| object   |   image_auroc |   pixel_auroc |   pixel_aupro |
+|:---------|--------------:|--------------:|--------------:|
+| wood     |          93.6 |          96.7 |          88.6 |
+| mean     |          93.6 |          96.7 |          88.6 |
+
+  çıktılarına ulaşıldı.
+
+  
