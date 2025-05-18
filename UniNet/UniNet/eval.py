@@ -19,36 +19,34 @@ from sklearn import manifold, metrics
 from matplotlib.ticker import NullFormatter
 from scipy.spatial.distance import pdist
 import matplotlib
-from sklearn.metrics import confusion_matrix
+
 from utils import t2np, rescale
 import sys
 from functools import partial
 from multiprocessing import Pool
 from skimage.measure import label, regionprops
-
+from sklearn.metrics import f1_score, jaccard_score, confusion_matrix
 from video_dataset import Label_loader
 from UniNet_lib.mechanism import weighted_decision_mechanism
-from scipy.ndimage import gaussian_filter
 
-from utils import rescale  # varsa
 
+
+def find_best_threshold(y_true, scores):
+    thresholds = np.linspace(0, 1, 101)
+    best_f1, best_threshold = 0, 0
+    for t in thresholds:
+        y_pred = (scores > t).astype(int)
+        f1 = f1_score(y_true, y_pred)
+        if f1 > best_f1:
+            best_f1 = f1
+            best_threshold = t
+    return best_threshold, best_f1
 
 
 def evaluation_indusAD(c, model, dataloader, device):
-    from sklearn.metrics import (
-        roc_auc_score,
-        precision_recall_curve,
-        confusion_matrix,
-        f1_score,
-        accuracy_score
-    )
-    import numpy as np
-    import time
-    import torch.nn.functional as F
-    from scipy.ndimage import gaussian_filter
-
     model.train_or_eval(type='eval')
     n = model.n
+    is_similarity = c.weighted_decision_mechanism
     gt_list_px = []
     gt_list_sp = []
     output_list = [list() for _ in range(n * 3)]
@@ -56,9 +54,9 @@ def evaluation_indusAD(c, model, dataloader, device):
 
     start_time = time.time()
     with torch.no_grad():
-        for sample, label, gt in dataloader:
-            gt_list_sp.extend(t2np(label))
-            gt_list_px.extend(t2np(gt))
+        for idx, (sample, label, gt) in enumerate(dataloader):
+            gt_list_sp.extend(t2np(label))  # image-level label
+            gt_list_px.extend(t2np(gt))     # pixel-level mask
             weights_cnt += 1
 
             img = sample[0].to(device) if c.dataset == "MVTec 3D-AD" else sample.to(device)
@@ -69,75 +67,43 @@ def evaluation_indusAD(c, model, dataloader, device):
                 output_list[l].append(output)
 
         fps = len(dataloader.dataset) / (time.time() - start_time)
-        print(f"🕒 FPS: {fps:.2f}")
+        print("fps:", fps, len(dataloader.dataset))
 
-        # Weighted scoring
-        anomaly_score, anomaly_map = weighted_decision_mechanism(
-            weights_cnt, output_list, c.alpha, c.beta
-        )
+        anomaly_score, anomaly_map = weighted_decision_mechanism(weights_cnt, output_list, c.alpha, c.beta)
 
-        # Gaussian smoothing (optional)
-        # anomaly_map = gaussian_filter(anomaly_map, sigma=2)
-
-        # Prepare ground truth
         gt_label = np.asarray(gt_list_sp, dtype=np.bool_)
         gt_mask = np.squeeze(np.asarray(gt_list_px, dtype=np.bool_), axis=1)
 
-        print(f"✅ gt_mask max: {gt_mask.max()}, anomaly_map max: {anomaly_map.max()}")
-
-        # AUROC metrics
         auroc_px = round(roc_auc_score(gt_mask.flatten(), anomaly_map.flatten()) * 100, 1)
         auroc_sp = round(roc_auc_score(gt_label, anomaly_score) * 100, 1)
-
-        # PRO score
         pro = round(eval_seg_pro(gt_mask, anomaly_map), 1)
 
-        # Best threshold (F1-based)
-        precision, recall, thresholds = precision_recall_curve(gt_label, anomaly_score)
-        f1s = 2 * precision * recall / (precision + recall + 1e-8)
-        best_idx = np.argmax(f1s)
-        best_thresh = thresholds[best_idx] if thresholds.size > 0 else 0.5
+        # === Image-level classification için eşik belirle (örn. 0.5)
+        # === Eşik değerini otomatik bul
+        y_true = gt_label.astype(int)
+        scores = np.array(anomaly_score)
 
-        if best_thresh > anomaly_map.max():
-            print(f"⚠️ Threshold {best_thresh:.4f} > anomaly_map.max {anomaly_map.max():.4f} — clipping")
-            best_thresh = anomaly_map.max()
-
-        print(f"🔍 Best threshold (F1-max): {best_thresh:.4f}")
-
-        pred_labels = (np.array(anomaly_score) > best_thresh).astype(int)
-        gt_labels = np.array(gt_label).astype(int)
-
-        cm = confusion_matrix(gt_labels, pred_labels)
-        print("📊 Confusion Matrix (Image-Level):\n", cm)
-
-        f1 = f1_score(gt_labels, pred_labels)
-        acc = accuracy_score(gt_labels, pred_labels)
-        print(f"✅ F1 Score: {f1:.3f} | Accuracy: {acc:.3f}")
-
-        # IoU calculation
-        pred_masks = (anomaly_map > best_thresh).astype(np.uint8)
-        print(f"🧩 pred_masks unique values: {np.unique(pred_masks)}")
-
-        ious = []
-        for i in range(len(gt_mask)):
-            if np.sum(gt_mask[i]) == 0:
-                continue
-            intersection = np.logical_and(gt_mask[i], pred_masks[i]).sum()
-            union = np.logical_or(gt_mask[i], pred_masks[i]).sum()
-            ious.append(intersection / (union + 1e-8))
-
-        if ious:
-            mean_iou = np.mean(ious)
-            print(f"📏 Mean IoU (Defect Images Only): {mean_iou:.4f}")
-        else:
-            mean_iou = 0.0
-            print("🚫 No defect images found for IoU calculation.")
-
-    return auroc_px, auroc_sp, pro
+        # Normalize Etmek için
+        print("Anomaly score range:", np.min(scores), np.max(scores))
+        scores = (scores - np.min(scores)) / (np.max(scores) - np.min(scores) + 1e-8)
 
 
+        best_threshold, image_f1 = find_best_threshold(y_true, scores)
+        y_pred = (scores > best_threshold).astype(int)
 
+        # Diğer metrikler
+        image_iou = round(jaccard_score(y_true, y_pred), 4)
+        cm = confusion_matrix(y_true, y_pred)
 
+        image_f1 = round(f1_score(y_true, y_pred), 4)
+
+      
+        print(f"✨ Best Threshold (image-level): {best_threshold:.4f}")
+        print(f"🧩 Image-level F1: {image_f1}")
+        print(f"📏 Image-level IoU: {image_iou}")
+        print(f"📊 Confusion Matrix:\n{cm}")
+
+    return auroc_px, auroc_sp, pro, image_f1, image_iou, cm
 
 def evaluation_vad(c, model, dataloader, device):
     model.train_or_eval(type='eval')
@@ -175,48 +141,33 @@ def evaluation_vad(c, model, dataloader, device):
     return auroc_sp, f1, acc
 
 
-def eval_seg_pro(gt_mask, anomaly_score_map, max_step=300):
-    expect_fpr = 0.2  # 🎯 Daha az false positive hedefle
+def eval_seg_pro(gt_mask, anomaly_score_map, max_step=800):
+    expect_fpr = 0.3    # default 30%
 
-    # === 🔧 Anomaly map'i normalize et ve yumuşat ===
-    anomaly_score_map = (anomaly_score_map - anomaly_score_map.min()) / \
-                        (anomaly_score_map.max() - anomaly_score_map.min() + 1e-8)
-
-    anomaly_score_map = gaussian_filter(anomaly_score_map, sigma=2)
-
-    # === 🔎 Threshold aralığını oluştur ===
     max_th = anomaly_score_map.max()
     min_th = anomaly_score_map.min()
     delta = (max_th - min_th) / max_step
     threds = np.arange(min_th, max_th, delta).tolist()
 
-    # === 🎯 Paralel olarak her threshold için PRO ve FPR hesapla ===
     pool = Pool(8)
     ret = pool.map(partial(single_process, anomaly_score_map, gt_mask), threds)
     pool.close()
-
-    # === 🔬 İstatistikleri ayıkla ===
     pros_mean = []
     fprs = []
     for pro_mean, fpr in ret:
         pros_mean.append(pro_mean)
         fprs.append(fpr)
-
     pros_mean = np.array(pros_mean)
     fprs = np.array(fprs)
-
-    # === 🔧 AUPRO hesaplaması (beklenen FPR altındakiler) ===
-    idx = fprs < expect_fpr
+    # expect_fpr = sum(fprs) / len(fprs)
+    idx = fprs < expect_fpr  # find the indexs of fprs that is less than expect_fpr (default 0.3)
     fprs_selected = fprs[idx]
+    fprs_selected = rescale(fprs_selected)  # rescale fpr [0,0.3] -> [0, 1]
     pros_mean_selected = pros_mean[idx]
-
-    if len(fprs_selected) == 0:
-        return 0.0  # hiçbir FPR < expect_fpr değilse AUPRO sıfır olur
-
-    fprs_selected = rescale(fprs_selected)  # [0, expect_fpr] → [0, 1]
     loc_pro_auc = auc(fprs_selected, pros_mean_selected) * 100
 
     return loc_pro_auc
+
 
 def single_process(anomaly_score_map, gt_mask, thred):
     binary_score_maps = np.zeros_like(anomaly_score_map, dtype=np.bool_)

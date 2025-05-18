@@ -5,6 +5,7 @@ import torch
 import glob
 from torchvision.datasets import MNIST, CIFAR10, FashionMNIST, ImageFolder
 import numpy as np
+# from noise import Simplex_CLASS
 import cv2
 from torchvision import transforms as T
 from torchvision.transforms import InterpolationMode
@@ -13,7 +14,6 @@ from torch.utils.data import DataLoader, ConcatDataset
 from video_dataset import Video_DataLoader
 import warnings
 warnings.filterwarnings("ignore", category=RuntimeWarning, module="importlib._bootstrap")
-
 
 
 BTAD_PATH = os.path.abspath(os.path.join("D:\ws/btad"))

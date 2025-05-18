@@ -3,6 +3,7 @@ import torch.nn as nn
 from .Loss import losses
 import numpy as np
 
+
 class EarlyStopping:
     def __init__(self, patience=3, delta=0, verbose=False):
         self.patience = patience
@@ -30,6 +31,7 @@ class EarlyStopping:
             self.counter = 0
 
     def save_checkpoint(self, pro):
+        """保存当前最佳模型"""
         if self.verbose:
             print(f'PRO increases ({self.pro_min:.1f} --> {pro:.1f}). Saving model...')
         self.pro_min = pro
@@ -51,6 +53,7 @@ class UniNet(nn.Module):
         self.t.train_eval(type)
         self.bn.train_eval(type)
         self.s.train_eval(type)
+
         return self
 
     def feature_selection(self, b, a, max):
@@ -59,17 +62,15 @@ class UniNet(nn.Module):
 
         if self.dfs is not None:
             selected_features = self.dfs(a, b, learnable=True, conv=False, max=max)
-            if selected_features is None:
-                print("❌ DFS None döndürdü, fallback olarak a kullanılıyor")
-                return a
-            return selected_features
         else:
-            from .DFS import domain_related_feature_selection
-            return domain_related_feature_selection(a, b, max=max)
+            from model.DFS import domain_related_feature_selection
+            selected_features = domain_related_feature_selection(a, b, max=max)
+        return selected_features
 
     def loss_computation(self, b, a, margin=1, mask=None, stop_gradient=False):
         T = 0.1 if self._class_ in ['transistor', 'pill', 'cable', 'bottle', "grid", 'foam'] else self.T
         loss = losses(b, a, T, margin, mask=mask, stop_gradient=stop_gradient)
+
         return loss
 
     def forward(self, x, max=True, mask=None, stop_gradient=False):
@@ -84,6 +85,7 @@ class UniNet(nn.Module):
         if self.type == 'train':
             stu_features_ = self.feature_selection(Sou_Tar_features, stu_features, max)
             loss = self.loss_computation(Sou_Tar_features, stu_features_, mask=mask, stop_gradient=stop_gradient)
+
             return loss
         else:
             return Sou_Tar_features, stu_features
@@ -103,6 +105,7 @@ class Teachers(nn.Module):
                 self.t_t.train()
             else:
                 self.t_t.eval()
+
         return self
 
     def forward(self, x):
@@ -113,7 +116,8 @@ class Teachers(nn.Module):
             return Sou_features
         else:
             Tar_features = self.t_t(x)
-            bnins = [torch.cat([a, b], dim=0) for a, b in zip(Tar_features, Sou_features)]
+            bnins = [torch.cat([a, b], dim=0) for a, b in zip(Tar_features, Sou_features)]  # 512, 1024, 2048
+
             return Sou_features + Tar_features, bnins
 
 
@@ -127,10 +131,13 @@ class BN(nn.Module):
             self.bn.train()
         else:
             self.bn.eval()
+
         return self
 
     def forward(self, x):
-        return self.bn(x)
+        bns = self.bn(x)
+
+        return bns
 
 
 class Student(nn.Module):
@@ -143,7 +150,10 @@ class Student(nn.Module):
             self.s1.train()
         else:
             self.s1.eval()
+
         return self
 
     def forward(self, bn_outs, skips=None):
-        return self.s1(bn_outs)
+        de_features = self.s1(bn_outs)
+
+        return de_features

@@ -65,7 +65,7 @@ def test(c, suffix='BEST_P_PRO'):
 
     if c.domain == 'industrial':
         if c.setting == 'oc':
-            auroc_px, auroc_sp, pro = evaluation_indusAD(c, model, test_dataloader, device)
+            auroc_px, auroc_sp, pro, image_f1, image_iou, cm = evaluation_indusAD(c, model, test_dataloader, device)
             return auroc_sp, auroc_px, pro
 
         else:   # multiclass

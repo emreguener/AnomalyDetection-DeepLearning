@@ -2,17 +2,12 @@ import numpy as np
 import os
 
 from train_unsupervisedAD import train
-from datasets import preprocess_for_3d, loading_dataset
-
+from datasets import preprocess_for_3d, UnsupervisedAD, SupervisedAD, \
+    mvtec_list, btad_list, mvtec3d_list, visa_list
 import argparse
 from utils import setup_seed, get_logger
 from test import test
-industrial = ['MVTec AD', 'BTAD', 'MVTec 3D-AD', 'VisA']
-medical = ['APTOS', 'ISIC2018', 'OCT2017']
-video = ['ped2']
-supervised = ["Kvasir-SEG", "CVC-ClinicDB", "CVC-ColonDB", "VAD"]
-unsupervised = ['MVTec AD']
-mvtec_list = ['wood']
+
 def parsing_args():
     parser = argparse.ArgumentParser(description='UniNet')
 
@@ -20,7 +15,7 @@ def parsing_args():
                         choices=['industrial', 'medical', 'video', 'natural'], help="choose experimental domain.")
     parser.add_argument('--setting', default='mc', type=str, choices=['oc', 'mc', 'cd'],
                         help="choose experimental settings, including one-class, multi-class, cross-dataset.")
-    parser.add_argument('--dataset', default='VisA', type=str,
+    parser.add_argument('--dataset', default='MVTec AD', type=str,
                         choices=['MVTec AD', 'BTAD', 'MVTec 3D-AD', "VisA", "VAD", "APTOS", "ISIC2018", "OCT2017",
                                  "Kvasir-SEG", "CVC-ClinicDB", "CVC-ColonDB", "Ped2"],
                         help="choose experimental dataset.")
@@ -38,11 +33,11 @@ def parsing_args():
     parser.add_argument('--alpha', default=0.01, type=float, help='hyperparameters for weights.')
     parser.add_argument('--beta', default=0.00003, type=float, help='hyperparameters for weights.')
 
-    parser.add_argument("--train_and_test_all", action='store_true', default=False,
+    parser.add_argument("--train_and_test_all", action='store_true', default=True,
                         help="for medical domains.")
     parser.add_argument("--is_saved", action='store_true', default=True, help="whether to save model weights.")
     parser.add_argument('--save_dir', type=str, default='./saved_results')
-    parser.add_argument('--load_ckpts', action='store_true', default=False, help="loading ckpts for testing")
+    parser.add_argument('--load_ckpts', action='store_false', default=False, help="disable ckpt loading, force retrain")
 
     args = parser.parse_args()
 
@@ -58,13 +53,13 @@ if __name__ == '__main__':
     if not c.weighted_decision_mechanism:
         c.default = c.alpha = c.beta = c.gamma = "w/o"
 
+    domain = c.domain
     dataset_name = c.dataset
     logger = get_logger(dataset_name, os.path.join(c.save_dir, dataset_name))
     # print_fn = logger.info
 
     dataset = None
-    if dataset_name in industrial:
-        c.domain = 'industrial'
+    if dataset_name in UnsupervisedAD:
         if dataset_name == 'MVTec AD':
             dataset = mvtec_list
         elif dataset_name == "MVTec 3D-AD":
@@ -73,18 +68,10 @@ if __name__ == '__main__':
             dataset = btad_list
         elif dataset_name == 'VisA':
             dataset = visa_list
-        elif dataset_name == 'VAD':
+        elif dataset_name in ["APTOS", "ISIC2018", "OCT2017", "ped2"]:
             dataset = [dataset_name]
-            c.setting = 'oc'
 
-    elif dataset_name in medical:
-        c.domain = 'medical'
-        c.setting = 'oc'
-        dataset = [dataset_name]
-
-    elif dataset_name in video:
-        c.domain = 'video'
-        c.setting = 'oc'
+    elif dataset_name in SupervisedAD:
         dataset = [dataset_name]
 
     else:
@@ -98,7 +85,7 @@ if __name__ == '__main__':
     # ---------------------------------------------------------------------------------------------------------
     # --------------------------------------unsupervised industrial AD-----------------------------------------
     # ---------------------------------------------------------------------------------------------------------
-    if dataset_name in industrial and dataset_name in unsupervised:
+    if dataset_name in UnsupervisedAD and domain == 'industrial':
         image_auroc_list = []
         pixel_auroc_list = []
         pixel_aupro_list = []
@@ -122,8 +109,6 @@ if __name__ == '__main__':
                     print(args_info)
                     train(c)
                 elif c.setting == 'mc':
-                    if dataset_name == 'MVTec AD':
-                        c.T = 0.1
                     print('training on {} dataset (multiclass)'.format(dataset_name)) if idx == 0 else None
                     print(args_info)
                     from train_multiclass import train_mc
@@ -140,7 +125,7 @@ if __name__ == '__main__':
                 print('testing on {} dataset (separate-class)'.format(dataset_name)) if idx == 0 else None
                 c._class_ = i
                 print(f"testing class:{i}")
-                auroc_sp, auroc_px, aupro_px = test(c, suffix='BEST_P_PRO')
+                auroc_sp, auroc_px, aupro_px = test(c, 'BEST_P_PRO')
                 print('')
                 table_ls.append(['{}'.format(i), str(np.round(auroc_sp, decimals=1)),
                                  str(np.round(auroc_px, decimals=1)),
@@ -161,7 +146,7 @@ if __name__ == '__main__':
             print('testing on {} dataset (multiclass)'.format(dataset_name))
 
             c._class_ = ''
-            auroc_list, acc_list, f1_list, class_list = test(c, suffix='BEST_I_ROC')
+            auroc_list, acc_list, f1_list, class_list = test(c, 'BEST_I_ROC')
             print('')
 
             for i, x, y, z in zip(class_list, auroc_list, acc_list, f1_list):
@@ -179,7 +164,7 @@ if __name__ == '__main__':
     # ---------------------------------------------------------------------------------------------------
     # -------------------------------------unsupervised medical AD---------------------------------------
     # ---------------------------------------------------------------------------------------------------
-    if dataset_name in medical and dataset_name in unsupervised:
+    if dataset_name in UnsupervisedAD and domain == 'medical':
         if c.train_and_test_all:
             dataset = ["APTOS", "ISIC2018", "OCT2017"]
 
@@ -209,7 +194,7 @@ if __name__ == '__main__':
             print('testing on {} dataset'.format(i))
             c._class_ = i
             c.dataset = i
-            auroc_sp, acc, f1 = test(c, suffix='BEST_I_ROC')
+            auroc_sp, acc, f1 = test(c, 'BEST_I_ROC')
             print('')
             table_ls.append(['{}'.format(i), str(np.round(auroc_sp, decimals=1)),
                              str(np.round(acc, decimals=1)),
@@ -227,7 +212,7 @@ if __name__ == '__main__':
     # ----------------------------------------------------------------------------------------------------------
     # --------------------------------supervised medical image segmentation-------------------------------------
     # ----------------------------------------------------------------------------------------------------------
-    if dataset_name in medical and dataset_name in supervised:
+    if dataset_name in SupervisedAD and domain == 'medical':
         if c.train_and_test_all:
             dataset = ["Kvasir-SEG", "CVC-ClinicDB", "CVC-ColonDB"]
 
@@ -259,7 +244,7 @@ if __name__ == '__main__':
             c._class_ = i
             c.dataset = i
 
-            mice, miou = test(c, stu_type='su_seg', suffix='BEST_DICE')
+            mice, miou = test(c, 'BEST_DICE')
 
             table_ls.append(['{}'.format(i), str(np.round(mice, decimals=1)), str(np.round(miou, decimals=1))])
             mice_list.append(mice)
@@ -271,45 +256,31 @@ if __name__ == '__main__':
         print(results)
 
     # -----------------------------------------------------------------------------------------------
-    # ------------------------------------supervised industrial AD-----------------------------------
+    # ------------------------------------unsupervised video AD--------------------------------------
     # -----------------------------------------------------------------------------------------------
-    if dataset_name in industrial and dataset_name in supervised:
+    if dataset_name in SupervisedAD and domain == 'industrial':
         image_auroc_list = []
         acc_list = []
         f1_list = []
-
-        # -----------------------------train-------------------------------------
-        if not c.load_ckpts:
-            for idx, i in enumerate(dataset):
-                c._class_ = i
-                c.T = 0.1
-
-                args_dict = vars(c)
-                args_info = ""
-                for key, value in args_dict.items():
-                    if key in ['_class_']:
-                        continue
-                    args_info += ", ".join([f"{key}:{value}, "])
-                print('training on {} dataset'.format(dataset_name)) if idx == 0 else None
-                print(args_info)
-
-                from train_vad import train
-                train(c)
-            print('training over!')
-
-        # -----------------------------test-------------------------------------
         for idx, i in enumerate(dataset):
-            print('testing on {} dataset'.format(i))
             c._class_ = i
-            c.dataset = i
-            auroc_sp, acc, f1 = test(c, stu_type='su_cls', suffix="BEST_I_ROC")
 
+            args_dict = vars(c)
+            args_info = ""
+            for key, value in args_dict.items():
+                if key in ['_class_']:
+                    continue
+                args_info += ", ".join([f"{key}:{value}, "])
+            print('training on {} dataset'.format(dataset_name)) if idx == 0 else None
+            print(args_info)
+
+            from train_vad import train
+            auroc_sp, acc, f1 = train(c)
             table_ls.append(['mean', str(np.round(auroc_sp, decimals=1)),
                              str(np.round(acc, decimals=1)),
                              str(np.round(f1, decimals=1))])
             image_auroc_list.append(auroc_sp)
             acc_list.append(acc)
             f1_list.append(f1)
-        results = tabulate(table_ls, headers=['object', 'image_auroc', 'acc', 'f1'], tablefmt="pipe")
+            results = tabulate(table_ls, headers=['object', 'image_auroc', 'acc', 'f1'], tablefmt="pipe")
         print(results)
-        
