@@ -1,0 +1,6 @@
+backbone_name: densenet121
+flow_step: 10
+input_size: 256
+conv3x3_only: true
+hidden_ratio: 1.25
+out_indices: [0,1,2,3]
