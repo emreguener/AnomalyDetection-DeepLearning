@@ -1,0 +1,1563 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wood Anomaly Detection System</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --primary: #f97316;
+      --primary-light: #fb923c;
+      --primary-dark: #ea580c;
+      --secondary: #475569;
+      --light: #fff7ed;
+      --dark: #431407;
+      --success: #10b981;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --border-radius: 8px;
+      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      --font-main: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      --bg-light: #fff7ed;
+      --bg-medium: #ffedd5;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: var(--font-main);
+      line-height: 1.6;
+      color: var(--dark);
+      background-color: var(--bg-light);
+      padding: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 20px;
+      width: 100%;
+    }
+
+    header {
+      background-color: white;
+      box-shadow: var(--shadow);
+      padding: 1rem 0;
+      margin-bottom: 2rem;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    header .container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .logo-container {
+      display: flex;
+      align-items: center;
+    }
+
+    header h1 {
+      color: var(--primary);
+      font-size: 1.8rem;
+      margin: 0;
+    }
+
+    .logo {
+      margin-right: 15px;
+      font-size: 1.8rem;
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      background-color: rgba(249, 115, 22, 0.1);
+      border-radius: 50%;
+    }
+
+    .language-selector {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .language-btn {
+      background: none;
+      border: 1px solid #e2e8f0;
+      border-radius: var(--border-radius);
+      padding: 5px 12px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .language-btn.active {
+      background-color: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    .language-btn:hover:not(.active) {
+      background-color: #f8fafc;
+    }
+
+    main {
+      flex: 1;
+      padding-bottom: 2rem;
+    }
+
+    .card {
+      background-color: white;
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow);
+      margin-bottom: 2rem;
+      overflow: hidden;
+      border-top: 4px solid var(--primary);
+    }
+
+    .card-header {
+      padding: 1.25rem;
+      border-bottom: 1px solid #e2e8f0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .card-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--dark);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .card-title i {
+      color: var(--primary);
+    }
+
+    .card-body {
+      padding: 1.5rem;
+    }
+
+    .upload-area {
+      text-align: center;
+    }
+
+    .dropzone {
+      border: 2px dashed #fed7aa;
+      border-radius: var(--border-radius);
+      padding: 2.5rem 2rem;
+      background-color: var(--light);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin-bottom: 1.5rem;
+      position: relative;
+    }
+
+    .dropzone:hover {
+      border-color: var(--primary);
+      background-color: #ffedd5;
+    }
+
+    .dropzone.dragover {
+      border-color: var(--primary);
+      background-color: #fff7ed;
+    }
+
+    .dropzone.has-file {
+      border-color: var(--success);
+      background-color: #f0fdf4;
+    }
+
+    .dropzone i {
+      font-size: 3rem;
+      color: var(--primary-light);
+      margin-bottom: 1rem;
+    }
+
+    .dropzone-text {
+      color: var(--secondary);
+      margin-bottom: 0.5rem;
+      font-size: 1.1rem;
+    }
+
+    .dropzone-subtext {
+      color: var(--secondary);
+      font-size: 0.9rem;
+      opacity: 0.8;
+    }
+
+    .selected-file {
+      margin-top: 1rem;
+      padding: 0.75rem;
+      background-color: #f0fdf4;
+      border-radius: var(--border-radius);
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .selected-file.show {
+      display: flex;
+    }
+
+    .selected-file-name {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 500;
+    }
+
+    .selected-file-name i {
+      color: var(--success);
+    }
+
+    .remove-file {
+      color: var(--danger);
+      cursor: pointer;
+      background: none;
+      border: none;
+      font-size: 1rem;
+      padding: 5px;
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
+    .browse-btn {
+      color: var(--primary);
+      text-decoration: underline;
+      cursor: pointer;
+      font-weight: 500;
+    }
+
+    .upload-options {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .option-group {
+      padding: 1rem;
+      border: 1px solid #e2e8f0;
+      border-radius: var(--border-radius);
+      transition: all 0.2s ease;
+    }
+
+    .option-group:hover {
+      border-color: #cbd5e1;
+      background-color: #f8fafc;
+    }
+
+    .option-label {
+      display: block;
+      font-weight: 600;
+      color: var(--dark);
+      margin-bottom: 0.5rem;
+    }
+
+    select {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid #cbd5e1;
+      border-radius: var(--border-radius);
+      font-family: var(--font-main);
+      font-size: 0.95rem;
+      color: var(--dark);
+      background-color: white;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+
+    select:hover {
+      border-color: var(--primary-light);
+    }
+
+    select:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+
+    .model-info {
+      font-size: 0.9rem;
+      color: var(--secondary);
+      margin-top: 0.75rem;
+      line-height: 1.5;
+    }
+
+    .upload-btn-container {
+      display: flex;
+      justify-content: center;
+    }
+
+    button {
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      padding: 0.8rem 1.75rem;
+      border-radius: var(--border-radius);
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      transition: all 0.3s ease;
+      gap: 10px;
+    }
+
+    button:hover {
+      background-color: var(--primary-dark);
+      transform: translateY(-1px);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .loading {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 0;
+    }
+
+    .loading.show {
+      display: flex;
+    }
+
+    .spinner {
+      border: 4px solid rgba(0, 0, 0, 0.1);
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      border-left-color: var(--primary);
+      animation: spin 1s linear infinite;
+      margin-bottom: 1rem;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .loading-text {
+      font-size: 1.1rem;
+      color: var(--secondary);
+      font-weight: 500;
+    }
+
+    .loading-subtext {
+      font-size: 0.9rem;
+      color: var(--secondary);
+      opacity: 0.8;
+      margin-top: 0.5rem;
+    }
+
+    .results {
+      display: none;
+    }
+
+    .results.show {
+      display: block;
+    }
+
+    .results-title {
+      font-size: 1.5rem;
+      color: var(--dark);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .back-to-upload {
+      font-size: 0.9rem;
+      color: var(--primary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      background: none;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: var(--border-radius);
+      transition: all 0.2s ease;
+    }
+
+    .back-to-upload:hover {
+      background-color: rgba(249, 115, 22, 0.1);
+      text-decoration: underline;
+      transform: none;
+    }
+
+    .prediction {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .prediction-label {
+      font-weight: 600;
+      font-size: 1rem;
+      color: var(--secondary);
+      width: 120px;
+    }
+
+    .prediction-value {
+      font-size: 1rem;
+      font-weight: 700;
+      padding: 0.5rem 1.25rem;
+      border-radius: 50px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .normal {
+      background-color: #dcfce7;
+      color: #166534;
+    }
+
+    .anomaly {
+      background-color: #fee2e2;
+      color: #991b1b;
+    }
+
+    .score-bar {
+      display: flex;
+      align-items: center;
+      margin-bottom: 2rem;
+    }
+
+    .score-label {
+      font-weight: 600;
+      font-size: 1rem;
+      color: var(--secondary);
+      width: 120px;
+    }
+
+    .score-container {
+      flex-grow: 1;
+      background-color: #e2e8f0;
+      height: 10px;
+      border-radius: 5px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .score-value {
+      height: 100%;
+      background: linear-gradient(90deg, var(--success) 0%, var(--warning) 50%, var(--danger) 100%);
+      border-radius: 5px;
+      transition: width 0.5s ease;
+    }
+
+    .score-number {
+      margin-left: 15px;
+      font-weight: 700;
+      font-size: 1rem;
+      display: flex;
+      align-items: baseline;
+      gap: 5px;
+    }
+    
+    .score-max {
+      font-weight: normal;
+      font-size: 0.85rem;
+      color: var(--secondary);
+      opacity: 0.8;
+    }
+
+    .dashboard-tabs {
+      display: flex;
+      background-color: #f8fafc;
+      border-radius: var(--border-radius);
+      margin-bottom: 1.5rem;
+      overflow: hidden;
+    }
+
+    .tab {
+      flex: 1;
+      text-align: center;
+      padding: 1rem 0.5rem;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      transition: all 0.3s ease;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      white-space: nowrap;
+    }
+
+    .tab i {
+      font-size: 1rem;
+    }
+
+    .tab.active {
+      border-bottom-color: var(--primary);
+      color: var(--primary);
+      font-weight: 600;
+      background-color: #ffedd5;
+    }
+
+    .tab:hover:not(.active) {
+      background-color: rgba(255, 255, 255, 0.8);
+    }
+
+    .image-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .image-card {
+      background-color: white;
+      border-radius: var(--border-radius);
+      overflow: hidden;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      border: 1px solid #e2e8f0;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .image-card-header {
+      padding: 1rem;
+      background-color: #f1f5f9;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .image-card-header i {
+      color: var(--primary);
+    }
+
+    .image-card-title {
+      font-weight: 600;
+      color: var(--dark);
+      font-size: 0.9rem;
+    }
+
+    .image-container {
+      padding: 1rem;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 280px;
+      background-color: white;
+      flex: 1;
+    }
+
+    .image-container img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+
+    .image-container img:hover {
+      transform: scale(1.02);
+    }
+
+    .image-placeholder {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: #6b7280;
+    }
+
+    .help-btn {
+      background: none;
+      border: none;
+      color: var(--primary);
+      cursor: pointer;
+      font-size: 1.2rem;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      transition: all 0.2s ease;
+    }
+
+    .help-btn:hover {
+      background-color: rgba(249, 115, 22, 0.1);
+      transform: none;
+    }
+
+    .tooltip {
+      position: relative;
+    }
+
+    .tooltip .tooltip-text {
+      visibility: hidden;
+      width: 240px;
+      background-color: var(--dark);
+      color: white;
+      text-align: center;
+      padding: 8px;
+      border-radius: 6px;
+      position: absolute;
+      z-index: 1;
+      bottom: 125%;
+      left: 50%;
+      transform: translateX(-50%);
+      opacity: 0;
+      transition: opacity 0.3s;
+      font-size: 0.85rem;
+      font-weight: normal;
+    }
+
+    .tooltip:hover .tooltip-text {
+      visibility: visible;
+      opacity: 1;
+    }
+
+    .image-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.8);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .image-modal.show {
+      display: flex;
+    }
+
+    .modal-content {
+      max-width: 90%;
+      max-height: 90%;
+      background-color: white;
+      border-radius: var(--border-radius);
+      overflow: hidden;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .modal-header {
+      padding: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .modal-title {
+      font-weight: 600;
+      font-size: 1.1rem;
+    }
+
+    .close-modal {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: var(--secondary);
+      padding: 0;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      transition: all 0.2s ease;
+    }
+
+    .close-modal:hover {
+      background-color: #f1f5f9;
+      color: var(--primary);
+      transform: none;
+    }
+
+    .modal-body {
+      padding: 1rem;
+      background-color: #f8fafc;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex: 1;
+      overflow: auto;
+    }
+
+    .modal-image {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+
+    .features-section {
+      margin-bottom: 2rem;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .feature-card {
+      background-color: white;
+      border-radius: var(--border-radius);
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      transition: all 0.3s ease;
+      border: 1px solid #e2e8f0;
+    }
+
+    .feature-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+
+    .feature-icon {
+      width: 60px;
+      height: 60px;
+      background-color: rgba(249, 115, 22, 0.1);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1rem;
+    }
+
+    .feature-icon i {
+      font-size: 1.75rem;
+      color: var(--primary);
+    }
+
+    .feature-title {
+      font-weight: 600;
+      font-size: 1.1rem;
+      color: var(--dark);
+      margin-bottom: 0.75rem;
+    }
+
+    .feature-description {
+      color: var(--secondary);
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+
+    footer {
+      background-color: white;
+      padding: 1.5rem 0;
+      margin-top: auto;
+      border-top: 1px solid #e2e8f0;
+    }
+
+    footer .container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 20px;
+    }
+
+    .footer-link {
+      color: var(--secondary);
+      text-decoration: none;
+      font-size: 0.9rem;
+    }
+
+    .footer-link:hover {
+      color: var(--primary);
+      text-decoration: underline;
+    }
+
+    .voting-details {
+      margin: 1.5rem 0 2rem 0;
+      padding: 1.5rem;
+      background-color: #f8fafc;
+      border-radius: var(--border-radius);
+      border: 1px solid #e2e8f0;
+    }
+
+    .voting-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--dark);
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .voting-list {
+      display: grid;
+      gap: 0.75rem;
+    }
+
+    .voting-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.75rem 1rem;
+      background-color: white;
+      border-radius: 6px;
+      border: 1px solid #e2e8f0;
+      transition: all 0.2s ease;
+    }
+
+    .voting-item:hover {
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    .voting-model {
+      font-weight: 600;
+      color: var(--dark);
+    }
+
+    .voting-decision {
+      font-weight: 700;
+      padding: 0.25rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.9rem;
+    }
+
+    .voting-decision.normal {
+      background-color: #dcfce7;
+      color: #166534;
+    }
+
+    .voting-decision.anomaly {
+      background-color: #fee2e2;
+      color: #991b1b;
+    }
+
+    .copyright {
+      color: var(--secondary);
+      font-size: 0.9rem;
+    }
+
+    @media (max-width: 768px) {
+      .image-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .upload-options {
+        grid-template-columns: 1fr;
+      }
+      
+      .features-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      footer .container {
+        flex-direction: column;
+        gap: 1rem;
+      }
+      
+      .footer-links {
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+      
+      .card-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+      }
+      
+      .language-selector {
+        align-self: flex-end;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .dashboard-tabs {
+        flex-wrap: wrap;
+      }
+      
+      .tab {
+        min-width: 50%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <div class="logo-container">
+        <div class="logo"><i class="fas fa-search-plus"></i></div>
+        <h1>Ahşap Anomali Tespiti</h1>
+      </div>
+      <div class="language-selector">
+        <button class="language-btn" data-lang="en">EN</button>
+        <button class="language-btn active" data-lang="tr">TR</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="container">
+      <section class="features-section">
+        <div class="features-grid">
+          <div class="feature-card">
+            <div class="feature-icon">
+              <i class="fas fa-tree"></i>
+            </div>
+            <h3 class="feature-title">Ahşap Uzmanı</h3>
+            <p class="feature-description">Özellikle ahşap malzemeler için optimize edilmiş, düğüm, çatlak ve leke gibi kusurları tespit eden AI sistemleri.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">
+              <i class="fas fa-search-plus"></i>
+            </div>
+            <h3 class="feature-title">Detaylı Analiz</h3>
+            <p class="feature-description">Isı haritaları ile ahşap yüzeydeki anomalilerin görsel olarak belirginleştirilmesi ve sınıflandırılması.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">
+              <i class="fas fa-bolt"></i>
+            </div>
+            <h3 class="feature-title">Hızlı Tarama</h3>
+            <p class="feature-description">Saniyeler içinde sonuç veren hızlı işlem süreci ile üretim hatlarında kalite kontrolü için ideal çözüm.</p>
+          </div>
+        </div>
+      </section>
+
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">
+            <i class="fas fa-upload"></i>
+            Görüntü Yükleme
+          </h2>
+          <button class="help-btn tooltip">
+            <i class="fas fa-question-circle"></i>
+            <span class="tooltip-text">Düğüm, çatlak veya renk bozukluğu gibi anomalileri tespit etmek için ahşap yüzey görüntüsü yükleyin.</span>
+          </button>
+        </div>
+        <div class="card-body">
+          <div class="upload-area">
+            <form action="/upload" method="POST" enctype="multipart/form-data" id="upload-form">
+              <div class="dropzone" id="dropzone">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <p class="dropzone-text">Görüntünüzü buraya sürükleyip bırakın</p>
+                <p class="dropzone-subtext">veya yüklemek için <span class="browse-btn">dosya seçin</span></p>
+              </div>
+              <div class="selected-file" id="selected-file">
+                <div class="selected-file-name">
+                  <i class="fas fa-file-image"></i>
+                  <span id="file-name">Dosya seçilmedi</span>
+                </div>
+                <button type="button" class="remove-file" id="remove-file">
+                  <i class="fas fa-times"></i>
+                </button>
+              </div>
+              <input type="file" name="image" id="file-input" accept="image/*" required>
+              
+              <div class="upload-options">
+                <div class="option-group">
+                  <label for="model_choice" class="option-label">Tespit Modeli:</label>
+                  <select name="model_choice" id="model_choice" required>
+                    <option value="efficientad">EfficientAD</option>
+                    <option value="uninet">UniNet</option>
+                    <option value="fastflow">FastFlow</option>
+                    <option value="voting">All Models</option>
+                  </select>
+                  <div class="model-info" id="model-info">
+                    EfficientAD, ahşap yüzey kusur tespiti için yüksek doğruluk ve makul işlem süresi ile optimize edilmiştir.
+                  </div>
+                </div>
+                <div class="option-group">
+                  <label for="threshold" class="option-label">Tespit Hassasiyeti:</label>
+                  <select name="threshold" id="threshold">
+                    <option value="low">Düşük (daha az yanlış pozitif)</option>
+                    <option value="medium" selected>Orta (dengeli)</option>
+                    <option value="high">Yüksek (ince anomalileri yakala)</option>
+                  </select>
+                  <div class="model-info">
+                    Hassasiyeti özel ahşap kalite gereksinimlerinize göre ayarlayın.
+                  </div>
+                </div>
+              </div>
+              
+              <div class="upload-btn-container">
+                <button type="submit" id="analyze-btn">
+                  <i class="fas fa-search"></i>
+                  Görüntüyü Analiz Et
+                </button>
+              </div>
+            </form>
+            
+            <div class="loading" id="loading">
+              <div class="spinner"></div>
+              <p class="loading-text">Ahşap yüzey analiz ediliyor...</p>
+              <p class="loading-subtext">Bu işlem birkaç saniye sürebilir</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Flask sonuçları için veri aktarımı -->
+      {% if result %}
+      <script>
+        window.flaskResult = {
+          prediction: "{{ result.prediction }}",
+          {% if result.details %}
+          details: {{ result.details|tojson|safe }},
+          {% endif %}
+          {% if result.score is not none %}
+          score: {{ result.score }},
+          {% endif %}
+          {% if result.original_url %}
+          original_url: "{{ result.original_url }}",
+          {% endif %}
+          {% if result.preprocessed_url %}
+          preprocessed_url: "{{ result.preprocessed_url }}",
+          {% endif %}
+          {% if result.heatmap_url %}
+          heatmap_url: "{{ result.heatmap_url }}",
+          {% endif %}
+          {% if result.overlay_url %}
+          overlay_url: "{{ result.overlay_url }}"
+          {% endif %}
+        };
+      </script>
+      {% endif %}
+
+      <!-- Sonuçlar bölümü -->
+      <div class="card results" id="results">
+        <div class="card-header">
+          <h2 class="results-title">
+            <i class="fas fa-chart-line"></i>
+            Analiz Sonuçları
+          </h2>
+          <button class="back-to-upload" id="back-to-upload">
+            <i class="fas fa-arrow-left"></i>
+            Yeni Analiz
+          </button>
+        </div>
+        <div class="card-body">
+          <div class="prediction">
+            <div class="prediction-label">Tahmin:</div>
+            <div class="prediction-value" id="prediction-value">
+              <i class="fas fa-check-circle"></i> Normal
+            </div>
+          </div>
+
+          <!-- VOTING MODE: Model kararlarını göster -->
+          <div class="voting-details" id="voting-details" style="display: none;">
+            <h3 class="voting-title">🗳️ Modellerin Kararları:</h3>
+            <div class="voting-list" id="voting-list">
+              <!-- Model kararları buraya eklenecek -->
+            </div>
+          </div>
+
+          <!-- TEK MODEL: Skor + görseller göster -->
+          <div class="single-model-results" id="single-model-results">
+            <div class="score-bar">
+              <div class="score-label">Anomali Skoru:</div>
+              <div class="score-container">
+                <div class="score-value" id="score-value" style="width: 0%;"></div>
+              </div>
+              <div class="score-number" id="score-number">0.00 <span class="score-max">/1.25</span></div>
+            </div>
+
+            <div class="dashboard-tabs">
+              <div class="tab active" data-tab="all">
+                <i class="fas fa-images"></i>
+                Tüm Görüntüler
+              </div>
+              <div class="tab" data-tab="original">
+                <i class="fas fa-image"></i>
+                Orijinal
+              </div>
+              <div class="tab" data-tab="preprocessed">
+                <i class="fas fa-sliders-h"></i>
+                İşlenmiş
+              </div>
+              <div class="tab" data-tab="heatmap">
+                <i class="fas fa-fire"></i>
+                Anomali Haritası
+              </div>
+              <div class="tab" data-tab="overlay">
+                <i class="fas fa-layer-group"></i>
+                Overlay
+              </div>
+            </div>
+
+            <div class="image-grid" id="image-grid">
+              <div class="image-card" data-category="original">
+                <div class="image-card-header">
+                  <i class="fas fa-image"></i>
+                  <div class="image-card-title">Orijinal Görüntü</div>
+                </div>
+                <div class="image-container">
+                  <img id="original-image" src="" alt="Orijinal" onclick="openModal(this, 'Orijinal Görüntü')" style="display: none;">
+                  <div class="image-placeholder">
+                    <i class="fas fa-image" style="font-size: 3rem; opacity: 0.3;"></i>
+                  </div>
+                </div>
+              </div>
+
+              <div class="image-card" data-category="preprocessed">
+                <div class="image-card-header">
+                  <i class="fas fa-sliders-h"></i>
+                  <div class="image-card-title">Otsu + Gaussian İşlenmiş</div>
+                </div>
+                <div class="image-container">
+                  <img id="preprocessed-image" src="" alt="İşlenmiş" onclick="openModal(this, 'İşlenmiş Görüntü')" style="display: none;">
+                  <div class="image-placeholder">
+                    <i class="fas fa-sliders-h" style="font-size: 3rem; opacity: 0.3;"></i>
+                  </div>
+                </div>
+              </div>
+
+              <div class="image-card" data-category="heatmap">
+                <div class="image-card-header">
+                  <i class="fas fa-fire"></i>
+                  <div class="image-card-title">Anomali Haritası</div>
+                </div>
+                <div class="image-container">
+                  <img id="heatmap-image" src="" alt="Anomali Haritası" onclick="openModal(this, 'Anomali Haritası')" style="display: none;">
+                  <div class="image-placeholder">
+                    <i class="fas fa-fire" style="font-size: 3rem; opacity: 0.3;"></i>
+                  </div>
+                </div>
+              </div>
+
+              <div class="image-card" data-category="overlay">
+                <div class="image-card-header">
+                  <i class="fas fa-layer-group"></i>
+                  <div class="image-card-title">Anomali Overlay</div>
+                </div>
+                <div class="image-container">
+                  <img id="overlay-image" src="" alt="Overlay" onclick="openModal(this, 'Anomali Overlay')" style="display: none;">
+                  <div class="image-placeholder">
+                    <i class="fas fa-layer-group" style="font-size: 3rem; opacity: 0.3;"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Image Modal -->
+  <div class="image-modal" id="image-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title" id="modal-title">Görüntü</h3>
+        <button class="close-modal" onclick="closeModal()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <img class="modal-image" id="modal-image" src="" alt="">
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="container">
+      <div class="footer-links">
+        <a href="#" class="footer-link">Gizlilik Politikası</a>
+        <a href="#" class="footer-link">Kullanım Şartları</a>
+        <a href="#" class="footer-link">İletişim</a>
+        <a href="#" class="footer-link">Yardım</a>
+      </div>
+      <div class="copyright">
+        &copy; 2025 Ahşap Anomali Tespiti Sistemi
+      </div>
+    </div>
+  </footer>
+    <script>
+    // Dil değiştirme
+    const languageButtons = document.querySelectorAll('.language-btn');
+    languageButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        languageButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        
+        const lang = btn.dataset.lang;
+        console.log('Dil değiştirildi:', lang);
+      });
+    });
+
+    // Model bilgilerini güncelleme
+    const modelSelect = document.getElementById('model_choice');
+    const modelInfo = document.getElementById('model-info');
+    
+    const modelDescriptions = {
+      'efficientad': 'EfficientAD, ahşap yüzey kusur tespiti için yüksek doğruluk ve makul işlem süresi ile optimize edilmiştir.',
+      'uninet': 'UniNet, karmaşık anomali türlerini tespit etmede yüksek hassasiyete sahip, detaylı analiz sunar.',
+      'fastflow': 'FastFlow, hızlı işlem gerektiren durumlarda uygun, gerçek zamanlı analiz için optimize edilmiştir.',
+      'voting': 'Tüm modellerin birleştirilmiş tahminleri en yüksek doğruluk oranını sağlar, ancak daha uzun sürer.'
+    };
+
+    if (modelSelect && modelInfo) {
+      modelSelect.addEventListener('change', (e) => {
+        modelInfo.textContent = modelDescriptions[e.target.value];
+      });
+    }
+
+    // Document hazır olduğunda çalıştır
+    document.addEventListener('DOMContentLoaded', function() {
+      // Flask sonucu varsa JavaScript ile göster
+      if (window.flaskResult) {
+        showResults(window.flaskResult);
+      }
+
+      // Dosya yükleme işlemleri
+      const dropzone = document.getElementById('dropzone');
+      const fileInput = document.getElementById('file-input');
+      const selectedFile = document.getElementById('selected-file');
+      const fileName = document.getElementById('file-name');
+      const removeFileBtn = document.getElementById('remove-file');
+      const browseBtn = document.querySelector('.browse-btn');
+      const uploadForm = document.getElementById('upload-form');
+      const loading = document.getElementById('loading');
+      const results = document.getElementById('results');
+      const analyzeBtn = document.getElementById('analyze-btn');
+      const backToUploadBtn = document.getElementById('back-to-upload');
+
+      // Dosya seçme butonu
+      if (browseBtn) {
+        browseBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          fileInput.click();
+        });
+      }
+
+      // Dropzone tıklama
+      if (dropzone) {
+        dropzone.addEventListener('click', function(e) {
+          e.preventDefault();
+          fileInput.click();
+        });
+      }
+
+      // Dosya seçildiğinde
+      if (fileInput) {
+        fileInput.addEventListener('change', function(e) {
+          if (e.target.files.length > 0) {
+            const file = e.target.files[0];
+            console.log('Selected file:', file.name);
+            
+            if (fileName) fileName.textContent = file.name;
+            if (selectedFile) selectedFile.classList.add('show');
+            if (dropzone) dropzone.classList.add('has-file');
+            
+            // Dropzone içeriğini güncelle
+            if (dropzone) {
+              const dropzoneText = dropzone.querySelector('.dropzone-text');
+              const dropzoneSubtext = dropzone.querySelector('.dropzone-subtext');
+              if (dropzoneText) dropzoneText.textContent = 'Dosya seçildi';
+              if (dropzoneSubtext) dropzoneSubtext.textContent = 'Analiz için butona tıklayın veya farklı dosya seçin';
+            }
+          }
+        });
+      }
+
+      // Dosya silme
+      if (removeFileBtn) {
+        removeFileBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          
+          if (fileInput) fileInput.value = '';
+          if (selectedFile) selectedFile.classList.remove('show');
+          if (dropzone) dropzone.classList.remove('has-file');
+          
+          // Dropzone içeriğini resetle
+          if (dropzone) {
+            const dropzoneText = dropzone.querySelector('.dropzone-text');
+            const dropzoneSubtext = dropzone.querySelector('.dropzone-subtext');
+            if (dropzoneText) dropzoneText.textContent = 'Görüntünüzü buraya sürükleyip bırakın';
+            if (dropzoneSubtext) dropzoneSubtext.innerHTML = 'veya yüklemek için <span class="browse-btn">dosya seçin</span>';
+            
+            // Yeni eklenen browse-btn için event listener ekle
+            const newBrowseBtn = dropzoneSubtext.querySelector('.browse-btn');
+            if (newBrowseBtn) {
+              newBrowseBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                fileInput.click();
+              });
+            }
+          }
+        });
+      }
+
+      // Sürükle bırak işlemleri
+      if (dropzone) {
+        dropzone.addEventListener('dragover', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          dropzone.classList.add('dragover');
+        });
+
+        dropzone.addEventListener('dragenter', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          dropzone.classList.add('dragover');
+        });
+
+        dropzone.addEventListener('dragleave', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          if (!dropzone.contains(e.relatedTarget)) {
+            dropzone.classList.remove('dragover');
+          }
+        });
+
+        dropzone.addEventListener('drop', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          dropzone.classList.remove('dragover');
+          
+          const files = e.dataTransfer.files;
+          if (files.length > 0) {
+            const file = files[0];
+            console.log('Dropped file:', file.name, file.type);
+            
+            if (file.type.startsWith('image/')) {
+              const dt = new DataTransfer();
+              dt.items.add(file);
+              fileInput.files = dt.files;
+              
+              if (fileName) fileName.textContent = file.name;
+              if (selectedFile) selectedFile.classList.add('show');
+              dropzone.classList.add('has-file');
+              
+              const dropzoneText = dropzone.querySelector('.dropzone-text');
+              const dropzoneSubtext = dropzone.querySelector('.dropzone-subtext');
+              if (dropzoneText) dropzoneText.textContent = 'Dosya seçildi';
+              if (dropzoneSubtext) dropzoneSubtext.textContent = 'Analiz için butona tıklayın veya farklı dosya seçin';
+            } else {
+              alert('Lütfen sadece resim dosyası seçin.');
+            }
+          }
+        });
+      }
+
+      // Yeni analiz butonu
+      if (backToUploadBtn) {
+        backToUploadBtn.addEventListener('click', () => {
+          results.classList.remove('show');
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+          
+          if (fileInput) fileInput.value = '';
+          if (selectedFile) selectedFile.classList.remove('show');
+          if (dropzone) dropzone.classList.remove('has-file');
+          if (dropzone) {
+            const dropzoneText = dropzone.querySelector('.dropzone-text');
+            const dropzoneSubtext = dropzone.querySelector('.dropzone-subtext');
+            if (dropzoneText) dropzoneText.textContent = 'Görüntünüzü buraya sürükleyip bırakın';
+            if (dropzoneSubtext) dropzoneSubtext.innerHTML = 'veya yüklemek için <span class="browse-btn">dosya seçin</span>';
+            
+            const newBrowseBtn = dropzoneSubtext.querySelector('.browse-btn');
+            if (newBrowseBtn) {
+              newBrowseBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                fileInput.click();
+              });
+            }
+          }
+        });
+      }
+    });
+
+    // Sonuçları göster (Flask sonuçları için)
+    function showResults(result) {
+      const predictionValue = document.getElementById('prediction-value');
+      if (predictionValue) {
+        if (result.prediction === "Normal") {
+          predictionValue.className = 'prediction-value normal';
+          predictionValue.innerHTML = '<i class="fas fa-check-circle"></i> Normal';
+        } else {
+          predictionValue.className = 'prediction-value anomaly';
+          predictionValue.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Anomali';
+        }
+      }
+
+      const votingDetails = document.getElementById('voting-details');
+      const singleModelResults = document.getElementById('single-model-results');
+      
+      if (result.details) {
+        if (votingDetails) votingDetails.style.display = 'block';
+        if (singleModelResults) singleModelResults.style.display = 'none';
+        
+        const votingList = document.getElementById('voting-list');
+        if (votingList) {
+          votingList.innerHTML = '';
+          
+          for (const [model, decision] of Object.entries(result.details)) {
+            const votingItem = document.createElement('div');
+            votingItem.className = 'voting-item';
+            
+            const decisionClass = decision === 'Anomali' ? 'anomaly' : 'normal';
+            
+            votingItem.innerHTML = `
+              <span class="voting-model">${model}</span>
+              <span class="voting-decision ${decisionClass}">${decision}</span>
+            `;
+            
+            votingList.appendChild(votingItem);
+          }
+        }
+      } else {
+        if (votingDetails) votingDetails.style.display = 'none';
+        if (singleModelResults) singleModelResults.style.display = 'block';
+        
+        const scoreValue = document.getElementById('score-value');
+        const scoreNumber = document.getElementById('score-number');
+        
+        if (result.score !== null && result.score !== undefined) {
+          const scorePercentage = (result.score / 1.25 * 100);
+          if (scoreValue) scoreValue.style.width = `${scorePercentage}%`;
+          if (scoreNumber) scoreNumber.innerHTML = `${result.score.toFixed(2)} <span class="score-max">/1.25</span>`;
+        } else {
+          if (scoreValue) {
+            scoreValue.style.width = '0%';
+            scoreValue.style.backgroundColor = 'gray';
+          }
+          if (scoreNumber) scoreNumber.innerHTML = 'N/A';
+        }
+
+        updateImage('original-image', result.original_url);
+        updateImage('preprocessed-image', result.preprocessed_url);
+        updateImage('heatmap-image', result.heatmap_url);
+        updateImage('overlay-image', result.overlay_url);
+      }
+
+      const results = document.getElementById('results');
+      if (results) {
+        results.classList.add('show');
+        results.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+
+    function updateImage(imageId, url) {
+      if (url) {
+        const image = document.getElementById(imageId);
+        if (image) {
+          const placeholder = image.nextElementSibling;
+          image.src = url;
+          image.style.display = 'block';
+          if (placeholder && placeholder.classList.contains('image-placeholder')) {
+            placeholder.style.display = 'none';
+          }
+        }
+      }
+    }
+
+    // Tab işlemleri
+    const tabs = document.querySelectorAll('.tab');
+    const imageCards = document.querySelectorAll('.image-card');
+
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        tabs.forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        
+        const category = tab.dataset.tab;
+        
+        imageCards.forEach(card => {
+          if (category === 'all' || card.dataset.category === category) {
+            card.style.display = 'block';
+          } else {
+            card.style.display = 'none';
+          }
+        });
+      });
+    });
+
+    // Modal işlemleri
+    function openModal(img, title) {
+      const modal = document.getElementById('image-modal');
+      const modalImage = document.getElementById('modal-image');
+      const modalTitle = document.getElementById('modal-title');
+      
+      if (modal && modalImage && modalTitle) {
+        modalImage.src = img.src;
+        modalTitle.textContent = title;
+        modal.classList.add('show');
+        
+        document.addEventListener('keydown', function handleEsc(e) {
+          if (e.key === 'Escape') {
+            closeModal();
+            document.removeEventListener('keydown', handleEsc);
+          }
+        });
+      }
+    }
+
+    function closeModal() {
+      const modal = document.getElementById('image-modal');
+      if (modal) {
+        modal.classList.remove('show');
+      }
+    }
+
+    // Window seviyesinde drag&drop engellemesi
+    window.addEventListener('dragover', (e) => {
+      e.preventDefault();
+    });
+
+    window.addEventListener('drop', (e) => {
+      e.preventDefault();
+    });
+
+    // Modal dışına tıklandığında kapatma
+    const imageModal = document.getElementById('image-modal');
+    if (imageModal) {
+      imageModal.addEventListener('click', (e) => {
+        if (e.target.id === 'image-modal') {
+          closeModal();
+        }
+      });
+    }
+  </script>
+</body>
+</html>

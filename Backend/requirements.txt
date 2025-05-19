@@ -1,0 +1,8 @@
+flask
+torch
+torchvision
+numpy
+opencv-python
+matplotlib
+Pillow
+tifffile

@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EfficientAD Anomali Tespiti</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --secondary: #475569;
+      --light: #f8fafc;
+      --dark: #1e293b;
+      --success: #10b981;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --border-radius: 8px;
+      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      line-height: 1.6;
+      color: var(--dark);
+      background-color: #f1f5f9;
+      padding: 0;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+
+    header {
+      background-color: white;
+      box-shadow: var(--shadow);
+      padding: 1rem 0;
+      margin-bottom: 2rem;
+    }
+
+    header .container {
+      display: flex;
+      align-items: center;
+    }
+
+    header h1 {
+      color: var(--primary);
+      font-size: 1.8rem;
+      margin: 0;
+    }
+
+    .logo {
+      margin-right: 15px;
+      font-size: 1.8rem;
+      color: var(--primary);
+    }
+
+    .upload-area {
+      background-color: white;
+      border-radius: var(--border-radius);
+      padding: 2rem;
+      box-shadow: var(--shadow);
+      margin-bottom: 2rem;
+      text-align: center;
+    }
+
+    .dropzone {
+      border: 2px dashed #cbd5e1;
+      border-radius: var(--border-radius);
+      padding: 2rem;
+      background-color: #f8fafc;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin-bottom: 1rem;
+    }
+
+    .dropzone:hover {
+      border-color: var(--primary);
+    }
+
+    .dropzone i {
+      font-size: 3rem;
+      color: var(--secondary);
+      margin-bottom: 1rem;
+    }
+
+    .dropzone p {
+      color: var(--secondary);
+      margin-bottom: 1rem;
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
+    .browse-btn {
+      color: var(--primary);
+      text-decoration: underline;
+      cursor: pointer;
+    }
+
+    button {
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      padding: 0.8rem 1.5rem;
+      border-radius: var(--border-radius);
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      transition: all 0.3s ease;
+    }
+
+    button:hover {
+      background-color: var(--primary-dark);
+    }
+
+    button i {
+      margin-right: 8px;
+    }
+
+    .results {
+      background-color: white;
+      border-radius: var(--border-radius);
+      padding: 2rem;
+      box-shadow: var(--shadow);
+    }
+
+    .results-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .results-title {
+      font-size: 1.5rem;
+      color: var(--dark);
+    }
+
+    .prediction {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .prediction-label {
+      font-weight: 600;
+      font-size: 1rem;
+      color: var(--secondary);
+    }
+
+    .prediction-value {
+      font-size: 1rem;
+      font-weight: 700;
+      padding: 0.4rem 1rem;
+      border-radius: 50px;
+    }
+
+    .normal {
+      background-color: #dcfce7;
+      color: #166534;
+    }
+
+    .anomaly {
+      background-color: #fee2e2;
+      color: #991b1b;
+    }
+
+    .score-bar {
+      display: flex;
+      align-items: center;
+      margin-bottom: 2rem;
+    }
+
+    .score-label {
+      font-weight: 600;
+      font-size: 1rem;
+      color: var(--secondary);
+      width: 120px;
+    }
+
+    .score-container {
+      flex-grow: 1;
+      background-color: #e2e8f0;
+      height: 10px;
+      border-radius: 5px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .score-value {
+      height: 100%;
+      background: linear-gradient(90deg, var(--success), var(--warning), var(--danger));
+      border-radius: 5px;
+    }
+
+    .score-number {
+      margin-left: 15px;
+      font-weight: 700;
+      font-size: 1rem;
+    }
+    
+    .score-max {
+      font-weight: normal;
+      font-size: 0.85rem;
+      color: var(--secondary);
+      opacity: 0.8;
+    }
+
+    .image-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .image-card {
+      background-color: #f8fafc;
+      border-radius: var(--border-radius);
+      overflow: hidden;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    .image-card-header {
+      padding: 1rem;
+      background-color: #f1f5f9;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .image-card-header i {
+      color: var(--primary);
+    }
+
+    .image-card-title {
+      font-weight: 600;
+      color: var(--dark);
+      font-size: 0.9rem;
+    }
+
+    .image-container {
+      padding: 1rem;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 250px;
+      background-color: white;
+    }
+
+    .image-container img {
+      max-width: 100%;
+      max-height: 230px;
+      object-fit: contain;
+    }
+
+    .dashboard-tabs {
+      display: flex;
+      background-color: white;
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow);
+      margin-bottom: 1.5rem;
+      overflow: hidden;
+    }
+
+    .tab {
+      flex: 1;
+      text-align: center;
+      padding: 1rem;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      transition: all 0.3s ease;
+    }
+
+    .tab.active {
+      border-bottom-color: var(--primary);
+      color: var(--primary);
+      font-weight: 600;
+    }
+
+    .tab:hover:not(.active) {
+      background-color: #f8fafc;
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 3rem;
+      padding: 1.5rem 0;
+      color: var(--secondary);
+      font-size: 0.9rem;
+    }
+
+    @media (max-width: 768px) {
+      .image-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <div class="logo"><i class="fas fa-search"></i></div>
+      <h1>EfficientAD Anomali Tespiti</h1>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="upload-area">
+      <form action="/upload" method="POST" enctype="multipart/form-data" id="upload-form">
+        <div class="dropzone" id="dropzone">
+          <i class="fas fa-cloud-upload-alt"></i>
+          <p>Görüntüyü sürükleyip bırakın veya <span class="browse-btn">dosya seçin</span></p>
+          <p class="selected-file-name"></p>
+        </div>
+        <input type="file" name="image" id="file-input" accept="image/*" required>
+          <div style="margin-bottom: 1rem;">
+            <label for="model_choice" style="display:block; font-weight:600; margin-bottom:0.5rem;">Model Seçimi:</label>
+            <select name="model_choice" id="model_choice" required style="padding: 0.5rem; border-radius: 8px; border: 1px solid #ccc;">
+              <option value="efficientad">EfficientAD</option>
+              <option value="uninet">UniNet</option>
+              <option value="fastflow">FastFlow</option>
+              <option value="voting">All Model</option>
+            </select>
+          </div>
+        <button type="submit"><i class="fas fa-search"></i> Yükle ve Analiz Et</button>
+      </form>
+    </div>
+
+    {% if result %}
+    <div class="results">
+      <div class="results-header">
+        <h2 class="results-title">Analiz Sonuçları</h2>
+      </div>
+
+      <div class="prediction">
+        <div class="prediction-label">Tahmin:</div>
+        {% if result.prediction == "Normal" %}
+          <div class="prediction-value normal">
+            <i class="fas fa-check-circle"></i> Normal
+          </div>
+        {% else %}
+          <div class="prediction-value anomaly">
+            <i class="fas fa-exclamation-triangle"></i> Anomali
+          </div>
+        {% endif %}
+      </div>
+
+      {# VOTING MODE: Sadece model kararlarını yaz #}
+      {% if result.details %}
+        <div class="voting-details">
+          <h3>🗳️ Modellerin Kararları:</h3>
+          <ul>
+            {% for model, decision in result.details.items() %}
+              <li>
+                <strong>{{ model }}</strong>: 
+                <span style="color: {% if decision == 'Anomali' %}red{% else %}green{% endif %};">
+                  {{ decision }}
+                </span>
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+
+      {# TEK MODEL: skor + görseller göster #}
+      {% else %}
+        <div class="score-bar">
+          <div class="score-label">Anomali Skoru:</div>
+          <div class="score-container">
+            {% if result.score is not none %}
+              <div class="score-value" style="width: {{ (result.score / 1.25 * 100)|round }}%;"></div>
+            {% else %}
+              <div class="score-value" style="width: 0%; background-color: gray;">N/A</div>
+            {% endif %}
+          </div>
+          <div class="score-number">{{ result.score }} <span class="score-max"></span></div>
+        </div>
+
+        <div class="dashboard-tabs">
+          <div class="tab active" data-tab="all">Tüm Görüntüler</div>
+          <div class="tab" data-tab="original">Orijinal</div>
+          <div class="tab" data-tab="preprocessed">İşlenmiş</div>
+          <div class="tab" data-tab="heatmap">Anomali Haritası</div>
+          <div class="tab" data-tab="overlay">Overlay</div>
+        </div>
+
+        <div class="image-grid">
+          <div class="image-card" data-category="original">
+            <div class="image-card-header">
+              <i class="fas fa-image"></i>
+              <div class="image-card-title">Orijinal Görüntü</div>
+            </div>
+            <div class="image-container">
+              <img src="{{ result.original_url }}" alt="Orijinal">
+            </div>
+          </div>
+
+          <div class="image-card" data-category="preprocessed">
+            <div class="image-card-header">
+              <i class="fas fa-sliders-h"></i>
+              <div class="image-card-title">Otsu + Gaussian İşlenmiş</div>
+            </div>
+            <div class="image-container">
+              <img src="{{ result.preprocessed_url }}" alt="İşlenmiş">
+            </div>
+          </div>
+
+          <div class="image-card" data-category="heatmap">
+            <div class="image-card-header">
+              <i class="fas fa-fire"></i>
+              <div class="image-card-title">Anomali Haritası</div>
+            </div>
+            <div class="image-container">
+              <img src="{{ result.heatmap_url }}" alt="Anomali Haritası">
+            </div>
+          </div>
+
+          <div class="image-card" data-category="overlay">
+            <div class="image-card-header">
+              <i class="fas fa-layer-group"></i>
+              <div class="image-card-title">Anomali Overlay</div>
+            </div>
+            <div class="image-container">
+              <img src="{{ result.overlay_url }}" alt="Overlay">
+            </div>
+          </div>
+        </div>
+      {% endif %}
+    </div>
+  {% endif %}
+  </div>
+
+  <footer>
+    <div class="container">
+      &copy; 2025 EfficientAD Anomali Tespiti Sistemi
+    </div>
+  </footer>
+
+  <script>
+    // Dosya yükleme işlemleri
+    const dropzone = document.getElementById('dropzone');
+    const fileInput = document.getElementById('file-input');
+    const selectedFileName = document.querySelector('.selected-file-name');
+    const browseBtn = document.querySelector('.browse-btn');
+
+    if (browseBtn) {
+      browseBtn.addEventListener('click', () => {
+        fileInput.click();
+      });
+    }
+
+    if (fileInput) {
+      fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+          selectedFileName.textContent = `Seçilen dosya: ${e.target.files[0].name}`;
+          dropzone.style.borderColor = 'var(--success)';
+        }
+      });
+    }
+
+    if (dropzone) {
+      // Sürükle bırak işlemleri
+      dropzone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropzone.style.borderColor = 'var(--primary)';
+        dropzone.style.backgroundColor = '#f0f9ff';
+      });
+
+      dropzone.addEventListener('dragleave', () => {
+        dropzone.style.borderColor = '#cbd5e1';
+        dropzone.style.backgroundColor = '#f8fafc';
+      });
+
+      dropzone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropzone.style.borderColor = 'var(--success)';
+        dropzone.style.backgroundColor = '#f8fafc';
+        
+        if (e.dataTransfer.files.length > 0) {
+          fileInput.files = e.dataTransfer.files;
+          selectedFileName.textContent = `Seçilen dosya: ${e.dataTransfer.files[0].name}`;
+        }
+      });
+    }
+
+    // Tab işlemleri
+    const tabs = document.querySelectorAll('.tab');
+    const imageCards = document.querySelectorAll('.image-card');
+
+    if (tabs.length > 0) {
+      tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+          // Aktif tab'ı değiştir
+          tabs.forEach(t => t.classList.remove('active'));
+          tab.classList.add('active');
+          
+          const category = tab.dataset.tab;
+          
+          // Görselleri filtrele
+          imageCards.forEach(card => {
+            if (category === 'all' || card.dataset.category === category) {
+              card.style.display = 'block';
+            } else {
+              card.style.display = 'none';
+            }
+          });
+        });
+      });
+    }
+  </script>
+</body>
+</html>
