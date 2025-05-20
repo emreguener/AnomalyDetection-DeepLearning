@@ -1,0 +1,96 @@
+====== Hiperparametre Optimizasyonu Başlatılıyor (2025-05-20 17:49:23) ======
+Quantile Değeri: 0.56
+🔍 Görüntüler işleniyor ve gelişmiş özellikler çıkarılıyor...
+✅ Toplam 141 görsel işlendi: 71 defect, 70 good
+🔍 Toplam 20 özellik kullanılıyor:
+  1. anomaly_ratio
+  2. mean_intensity
+  3. max_intensity
+  4. topk_mean
+  5. std_intensity
+  6. p25
+  7. p50
+  8. p75
+  9. p90
+  10. iqr
+  11. skewness
+  12. kurtosis
+  13. entropy
+  14. area_ratio
+  15. largest_area
+  16. circularity
+  17. extent
+  18. num_contours
+  19. avg_contour_size
+  20. complexity
+📊 Çıkarılan özellikler kaydedildi: /content/eval_outputs/extracted_features.csv
+
+=== GridSearchCV ile Hiperparametre Optimizasyonu ===
+
+🔍 DecisionTree için hiperparametre optimizasyonu başlatılıyor...
+✅ DecisionTree en iyi parametreler: {'criterion': 'gini', 'max_depth': 3, 'min_samples_leaf': 1, 'min_samples_split': 2}
+✅ DecisionTree en iyi F1 skoru: 0.7216
+
+🔍 RandomForest için hiperparametre optimizasyonu başlatılıyor...
+✅ RandomForest en iyi parametreler: {'max_depth': 7, 'max_features': 'sqrt', 'min_samples_leaf': 1, 'min_samples_split': 10, 'n_estimators': 200}
+✅ RandomForest en iyi F1 skoru: 0.7154
+
+🔍 GradientBoosting için hiperparametre optimizasyonu başlatılıyor...
+✅ GradientBoosting en iyi parametreler: {'learning_rate': 0.2, 'max_depth': 4, 'min_samples_split': 5, 'n_estimators': 50, 'subsample': 1.0}
+✅ GradientBoosting en iyi F1 skoru: 0.7339
+
+🔍 XGBoost için hiperparametre optimizasyonu başlatılıyor...
+✅ XGBoost en iyi parametreler: {'colsample_bytree': 1.0, 'gamma': 0.2, 'learning_rate': 0.01, 'max_depth': 6, 'n_estimators': 200, 'subsample': 1.0}
+✅ XGBoost en iyi F1 skoru: 0.7211
+
+🔍 AdaBoost için hiperparametre optimizasyonu başlatılıyor...
+✅ AdaBoost en iyi parametreler: {'learning_rate': 0.1, 'n_estimators': 50}
+✅ AdaBoost en iyi F1 skoru: 0.6834
+
+🔍 SVM için hiperparametre optimizasyonu başlatılıyor...
+✅ SVM en iyi parametreler: {'C': 0.1, 'gamma': 'scale', 'kernel': 'rbf'}
+✅ SVM en iyi F1 skoru: 0.6705
+
+=== Optuna ile XGBoost İleri Seviye Optimizasyon ===
+⭐ Optuna ile XGBoost en iyi parametreler: {'n_estimators': 412, 'max_depth': 4, 'learning_rate': 0.013316421551547044, 'subsample': 0.8041407563609158, 'colsample_bytree': 0.8250151514139565, 'gamma': 0.22527790693090494, 'min_child_weight': 2, 'reg_alpha': 0.9138197111563866, 'reg_lambda': 0.29003911844062036}
+⭐ Optuna ile XGBoost en iyi F1 skoru: 0.6981
+❌ Optuna XGBoost optimizasyonu sırasında hata: 
+Image export using the "kaleido" engine requires the kaleido package,
+which can be installed using pip:
+    $ pip install -U kaleido
+
+
+=== En İyi Performanslı Modelleri Tespit Ediliyor ===
+🥇 1. sırada GradientBoosting: F1 Skoru = 0.7339
+🥇 2. sırada DecisionTree: F1 Skoru = 0.7216
+🥇 3. sırada XGBoost: F1 Skoru = 0.7211
+
+=== En İyi Model: GradientBoosting (F1: 0.7339) ===
+
+📊 Sınıflandırma Raporu:
+              precision    recall  f1-score   support
+
+      Normal       0.97      0.96      0.96        70
+      Defect       0.96      0.97      0.97        71
+
+    accuracy                           0.96       141
+   macro avg       0.96      0.96      0.96       141
+weighted avg       0.96      0.96      0.96       141
+
+
+📊 En önemli 10 özellik:
+  1. p75: 0.1733
+  2. iqr: 0.1053
+  3. anomaly_ratio: 0.0944
+  4. entropy: 0.0832
+  5. max_intensity: 0.0724
+  6. std_intensity: 0.0713
+  7. p50: 0.0688
+  8. kurtosis: 0.0661
+  9. mean_intensity: 0.0613
+  10. area_ratio: 0.0548
+
+✅ Tüm sonuçlar '/content/eval_outputs' klasörüne kaydedildi.
+📊 Tahminler: /content/eval_outputs/predictions_GradientBoosting.csv
+📊 Confusion Matrix: /content/eval_outputs/conf_matrix_GradientBoosting.png
+📊 Özet rapor: /content/eval_outputs/optimization_summary.txt

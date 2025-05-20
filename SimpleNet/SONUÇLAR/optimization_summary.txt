@@ -1,0 +1,38 @@
+=== Hiperparametre Optimizasyonu Özet Raporu ===
+
+Veri Seti Bilgileri:
+  Toplam görsel sayısı: 141
+  Defect görsel sayısı: 71
+  Normal görsel sayısı: 70
+
+Model Performansları (F1 Skoru):
+  1. GradientBoosting: 0.7339
+  2. DecisionTree: 0.7216
+  3. XGBoost: 0.7211
+  4. RandomForest: 0.7154
+  5. AdaBoost: 0.6834
+  6. SVM: 0.6705
+
+En İyi Model: GradientBoosting
+F1 Skoru: 0.7339
+
+Sınıflandırma Raporu:
+              precision    recall  f1-score   support
+
+      Normal       0.97      0.96      0.96        70
+      Defect       0.96      0.97      0.97        71
+
+    accuracy                           0.96       141
+   macro avg       0.96      0.96      0.96       141
+weighted avg       0.96      0.96      0.96       141
+
+Confusion Matrix:
+  True Negatives: 67
+  False Positives: 3
+  False Negatives: 2
+  True Positives: 69
+
+Accuracy: 0.9645
+Precision: 0.9583
+Recall: 0.9718
+F1 Score: 0.9650
