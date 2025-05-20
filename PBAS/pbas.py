@@ -352,45 +352,6 @@ class PBAS(torch.nn.Module):
 
         return image_auroc, image_ap, pixel_auroc, pixel_ap, pixel_pro, epoch
 
-    def _evaluate(self, images, scores, segmentations, labels_gt, masks_gt, name, path='training'):
-        scores = np.squeeze(np.array(scores))
-        image_scores = metrics.compute_imagewise_retrieval_metrics(scores, labels_gt, path)
-        image_auroc = image_scores["auroc"]
-        image_ap = image_scores["ap"]
-
-        segmentations = np.array(segmentations)
-        pixel_scores = metrics.compute_pixelwise_retrieval_metrics(segmentations, masks_gt, path)
-        pixel_auroc = pixel_scores["auroc"]
-        pixel_ap = pixel_scores["ap"]
-        if path == 'eval':
-            try:
-                pixel_pro = metrics.compute_pro(np.squeeze(np.array(masks_gt)), segmentations)
-            except:
-                pixel_pro = 0.
-        else:
-            pixel_pro = 0.
-
-        defects = np.array(images)
-        targets = np.array(masks_gt)
-        for i in range(len(defects)):
-            defect = utils.torch_format_2_numpy_img(defects[i])
-            target = utils.torch_format_2_numpy_img(targets[i])
-
-            mask = cv2.cvtColor(cv2.resize(segmentations[i], (defect.shape[1], defect.shape[0])),
-                                cv2.COLOR_GRAY2BGR)
-            mask = (mask * 255).astype('uint8')
-            mask = cv2.applyColorMap(mask, cv2.COLORMAP_JET)
-
-            full_path = './results/' + path + '/' + name + '/'
-            utils.del_remake_dir(full_path, del_flag=False)
-
-            cv2.imwrite(full_path + str(i + 1).zfill(3) + '_input.png', defect)
-            cv2.imwrite(full_path + str(i + 1).zfill(3) + '_gt.png', target)
-            cv2.imwrite(full_path + str(i + 1).zfill(3) + '_heatmap.png', mask)
-
-
-        return image_auroc, image_ap, pixel_auroc, pixel_ap, pixel_pro
-
     def predict(self, test_dataloader):
         """This function provides anomaly scores/maps for full dataloaders."""
         self.forward_modules.eval()
@@ -444,3 +405,327 @@ class PBAS(torch.nn.Module):
                 image_scores = image_scores.cpu().numpy()
 
         return list(image_scores), list(masks)
+    
+
+    def _evaluate(self, images, scores, segmentations, labels_gt, masks_gt, name, path='training'):
+    # Skorları ve sonuçları hesaplama
+      scores = np.squeeze(np.array(scores))
+      image_scores = metrics.compute_imagewise_retrieval_metrics(scores, labels_gt, path)
+      image_auroc = image_scores["auroc"]
+      image_ap = image_scores["ap"]
+      
+      # Ek olarak: threshold ile binary sınıflandırma yap ve F1 hesapla
+      from sklearn.metrics import f1_score, precision_score, recall_score, confusion_matrix
+      best_f1 = 0
+      best_thresh = 0.0
+      for t in np.linspace(min(scores), max(scores), 100):
+          preds = [1 if s > t else 0 for s in scores]
+          f1 = f1_score(labels_gt, preds)
+          if f1 > best_f1:
+              best_f1 = f1
+              best_thresh = t
+      final_preds = [1 if s > best_thresh else 0 for s in scores]
+      precision = precision_score(labels_gt, final_preds)
+      recall = recall_score(labels_gt, final_preds)
+      cm = confusion_matrix(labels_gt, final_preds)
+
+      print("🔍 Optimal threshold:", round(best_thresh, 4))
+      print("✅ Image-level F1 Score:", round(best_f1, 4))
+      print("📊 Precision:", round(precision, 4))
+      print("📈 Recall:", round(recall, 4))
+      print("🧮 Confusion Matrix:\n", cm)
+
+      segmentations = np.array(segmentations)
+      pixel_scores = metrics.compute_pixelwise_retrieval_metrics(segmentations, masks_gt, path)
+      pixel_auroc = pixel_scores["auroc"]
+      pixel_ap = pixel_scores["ap"]
+      if path == 'eval':
+        try:
+            pixel_pro = metrics.compute_pro(np.squeeze(np.array(masks_gt)), segmentations)
+        except:
+            pixel_pro = 0.
+      else:
+        pixel_pro = 0.
+      def compute_iou(pred_mask, gt_mask, threshold=0.5):
+            pred_binary = (pred_mask > threshold).astype(np.uint8)
+            if len(gt_mask.shape) == 3 and gt_mask.shape[2] == 3:
+                gt_mask = cv2.cvtColor(gt_mask, cv2.COLOR_BGR2GRAY)
+            gt_binary = (gt_mask > 0).astype(np.uint8)
+
+            intersection = np.logical_and(pred_binary, gt_binary).sum()
+            union = np.logical_or(pred_binary, gt_binary).sum()
+            return intersection / union if union != 0 else 0.0
+
+      # F1 skorlarını hesapla
+      def compute_f1_score(pred_mask, gt_mask, threshold=0.5):
+          """
+          Prediction ve ground truth maskeleri arasındaki F1 skorunu hesapla
+          """
+          pred_binary = (pred_mask > threshold).astype(np.uint8)
+          
+          # Eğer gt_mask 3 kanallı ise, tek kanala dönüştür
+          if len(gt_mask.shape) == 3 and gt_mask.shape[2] == 3:
+              gt_mask_gray = cv2.cvtColor(gt_mask, cv2.COLOR_BGR2GRAY)
+          else:
+              gt_mask_gray = gt_mask
+              
+          gt_binary = (gt_mask_gray > 0).astype(np.uint8)
+          
+          # Şekilleri kontrol et
+          if pred_binary.shape != gt_binary.shape:
+              raise ValueError(f"Shapes do not match: pred_binary.shape={pred_binary.shape}, gt_binary.shape={gt_binary.shape}")
+          
+          # True Positive, False Positive, False Negative sayılarını hesapla
+          tp = np.sum(np.logical_and(pred_binary == 1, gt_binary == 1))
+          fp = np.sum(np.logical_and(pred_binary == 1, gt_binary == 0))
+          fn = np.sum(np.logical_and(pred_binary == 0, gt_binary == 1))
+          
+          # Precision ve recall hesapla
+          precision = tp / (tp + fp) if (tp + fp) > 0 else 0
+          recall = tp / (tp + fn) if (tp + fn) > 0 else 0
+          
+          # F1 skoru hesapla
+          f1 = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
+          
+          return f1, precision, recall
+
+    # Görselleştirme ve anomali bölgelerinin işaretlenmesi
+      defects = np.array(images)
+      targets = np.array(masks_gt)
+    
+    # Sonuçların kaydedileceği dizini oluştur
+      full_path = './results/' + path + '/' + name + '/'
+      utils.del_remake_dir(full_path, del_flag=False)
+    
+    # Her bir görüntü için anomali tespiti ve görselleştirme
+      for i in range(len(defects)):
+        # Görüntüleri doğru formata dönüştür
+        defect = utils.torch_format_2_numpy_img(defects[i])
+        target = utils.torch_format_2_numpy_img(targets[i])
+
+        # Isı haritasını görüntü boyutuna yeniden boyutlandır
+        heatmap = cv2.resize(segmentations[i], (defect.shape[1], defect.shape[0]))
+        iou_score = compute_iou(heatmap, target)
+
+        # Tüm görüntü için F1 skoru hesapla
+        try:
+            f1, precision, recall = compute_f1_score(heatmap, target)
+        except Exception as e:
+            print(f"Error computing overall F1 score for image {i+1}: {str(e)}")
+            f1, precision, recall = 0.0, 0.0, 0.0
+        
+        # Isı haritasını renklendirme - JET renk haritası
+        heatmap_vis = cv2.cvtColor((heatmap * 255).astype('uint8'), cv2.COLOR_GRAY2BGR)
+        colored_heatmap = cv2.applyColorMap(heatmap_vis, cv2.COLORMAP_JET)
+        
+        # Yüksek eşik değeri ile anomali bölgelerini tespit et (0.8 olarak ayarlanmış)
+        high_threshold = 0.80  # Bu değeri 0 ile 1 arasında ihtiyaca göre ayarlayabilirsiniz
+        binary_mask = (heatmap > high_threshold).astype(np.uint8) * 255
+        
+        # Gürültü azaltma için morfolojik işlemler (opsiyonel)
+        kernel = np.ones((3, 3), np.uint8)
+        binary_mask = cv2.morphologyEx(binary_mask, cv2.MORPH_OPEN, kernel)
+        
+        # Anomali konturlarını bul
+        contours, _ = cv2.findContours(binary_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        
+        # Orijinal görüntü üzerine konturları çiz
+        defect_with_contours = defect.copy()
+        # Prediction ve Ground Truth yazısı ekle
+        true_label = labels_gt[i]
+        pred_label = final_preds[i]
+
+        gt_text = "Ground Truth: Anomaly" if true_label == 1 else "Ground Truth: Normal"
+        pred_text = "Prediction: Anomaly" if pred_label == 1 else "Prediction: Normal"
+
+        # Doğruysa yeşil, yanlışsa kırmızı
+        color = (0, 255, 0) if true_label == pred_label else (0, 0, 255)
+
+        # Yazıları ayrı ayrı çiz (çakışmasın diye satır satır)
+        cv2.putText(
+            defect_with_contours,
+            pred_text,
+            (10, 45),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.4,
+            color,
+            1
+        )
+
+        cv2.putText(
+            defect_with_contours,
+            gt_text,
+            (10, 65),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.4,
+            color,
+            1
+        )
+
+
+        
+        # Konturları çiz ve kontur içine anomali skorunu yaz
+        for j, contour in enumerate(contours):
+            area = cv2.contourArea(contour)
+            if area < 100:  # Çok küçük anomalileri filtrele
+                continue
+                
+            # Konturun orijinal görüntü üzerine çizimi
+            cv2.drawContours(defect_with_contours, [contour], -1, (0, 255, 0), 2)  # Yeşil konturlar
+            
+            # Anomali bölgesinin ortalama skorunu hesapla
+            mask = np.zeros_like(heatmap)
+            cv2.drawContours(mask, [contour], 0, 1, -1)
+            mean_score = np.mean(heatmap[mask == 1])
+            
+            # Konturun ağırlık merkezini hesapla
+            M = cv2.moments(contour)
+            if M["m00"] != 0:
+                cX = int(M["m10"] / M["m00"])
+                cY = int(M["m01"] / M["m00"])
+            else:
+                cX, cY = 0, 0
+                
+            # Anomali skoru yazısı için arka plan dikdörtgeni
+            text = f"{mean_score:.2f}"
+            (text_width, text_height), _ = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)
+            
+            # Anomali skorunu konturun ağırlık merkezine yaz
+            cv2.putText(
+                defect_with_contours, 
+                text, 
+                (cX - text_width // 2, cY + text_height // 2), 
+                cv2.FONT_HERSHEY_SIMPLEX, 
+                0.5, 
+                (0, 0, 255),  # Kırmızı renk
+                1
+            )
+        
+        # Görüntü üzerine daireler (circles) çizerek anomalileri işaretle
+        defect_with_circles = defect.copy()
+        
+        # Anomali özelliklerini kaydetmek için bir metin dosyası oluştur
+        with open(full_path + str(i + 1).zfill(3) + '_anomalies.txt', 'w') as f:
+            f.write(f"Image: {str(i + 1).zfill(3)}\n")
+            f.write(f"Threshold used: {high_threshold}\n")
+            f.write(f"Total anomalies detected: {len(contours)}\n")
+            f.write(f"Overall F1 Score: {f1:.4f}\n")
+            f.write(f"Overall Precision: {precision:.4f}\n")
+            f.write(f"Overall Recall: {recall:.4f}\n\n")
+        
+        # Her bir anomali için özelliklerini hesapla ve görselleştir
+        contour_data = []  # Kontur bilgilerini saklamak için liste
+        
+        for j, contour in enumerate(contours):
+            area = cv2.contourArea(contour)
+            
+            # Çok küçük anomalileri filtrele (alanı 100 pikselden küçük olanları atla)
+            if area < 100:  
+                continue
+                
+            # Daire çizmek için anomalinin minimum çevreleyen daireyi bul
+            (x, y), radius = cv2.minEnclosingCircle(contour)
+            center = (int(x), int(y))
+            radius = int(radius)
+            
+            # Anomali bölgesinin ortalama skoru hesapla
+            mask = np.zeros_like(heatmap)
+            cv2.drawContours(mask, [contour], 0, 1, -1)
+            mean_score = np.mean(heatmap[mask == 1])
+            
+            # Bu kontur bölgesi için F1 skoru hesapla
+            contour_mask = np.zeros_like(heatmap)
+            cv2.drawContours(contour_mask, [contour], 0, 1, -1)
+            
+            # Bu kontur bölgesi için F1 skoru hesapla
+            try:
+                contour_f1, contour_prec, contour_rec = compute_f1_score(contour_mask, target)
+            except Exception as e:
+                print(f"Error computing F1 score for contour {j+1}: {str(e)}")
+                contour_f1, contour_prec, contour_rec = 0.0, 0.0, 0.0
+            
+            # Kontur verilerini sakla
+            if radius > 5:
+                contour_data.append({
+                    'center': center,
+                    'radius': radius,
+                    'mean_score': mean_score,
+                    'id': j+1,
+                    'area': area,
+                    'f1': contour_f1,
+                    'precision': contour_prec,
+                    'recall': contour_rec
+                })
+            
+            # Anomali bilgilerini dosyaya kaydet
+            with open(full_path + str(i + 1).zfill(3) + '_anomalies.txt', 'a') as f:
+                f.write(f"Anomaly #{j+1}:\n")
+                f.write(f"  Center: ({int(x)}, {int(y)})\n")
+                f.write(f"  Radius: {radius} pixels\n")
+                f.write(f"  Area: {area:.1f} pixels²\n")
+                f.write(f"  Mean score: {mean_score:.4f}\n")
+                f.write(f"  F1 Score: {contour_f1:.4f}\n")
+                f.write(f"  Precision: {contour_prec:.4f}\n")
+                f.write(f"  Recall: {contour_rec:.4f}\n\n")
+            
+        # Yarı-saydam ısı haritası ile orijinal görüntüyü birleştir
+        overlay = defect.copy()
+        alpha = 0.6  # Saydamlık faktörü
+        cv2.addWeighted(colored_heatmap, alpha, defect, 1-alpha, 0, overlay)
+        
+        # Kompozit görüntü oluştur (tüm görselleştirmeleri tek bir görüntüde birleştir)
+        h, w = defect.shape[:2]
+        composite = np.zeros((h, w*4, 3), dtype=np.uint8)
+        
+        # İlk üç bölüm: orijinal, heatmap ve konturlar
+        composite[:, 0:w] = defect
+        composite[:, w:w*2] = colored_heatmap
+        composite[:, w*2:w*3] = defect_with_contours
+        
+        # Dördüncü bölüm: daireler
+        # Orijinal görüntüyü kopyala
+        defect_with_circles = defect.copy()
+        
+        # Daireleri çiz
+        for data in contour_data:
+            cv2.circle(defect_with_circles, data['center'], data['radius'], (0, 0, 255), 2)
+            # Sadece anomaly skoru yazdır
+            cv2.putText(
+                defect_with_circles, 
+                f"{data['mean_score']:.2f}", 
+                (data['center'][0] - 10, data['center'][1] + 5), 
+                cv2.FONT_HERSHEY_SIMPLEX, 
+                0.5, 
+                (0, 0, 255), 
+                1
+            )
+        
+        # Daire görüntüsünü kompozitin dördüncü bölümüne yerleştir
+        composite[:, w*3:w*4] = defect_with_circles
+        
+        # Kompozit görüntüye açıklayıcı etiketler ekle
+        labels = ["Original", "Heatmap", "Contours", "Circles"]
+        for idx, label in enumerate(labels):
+            cv2.putText(
+                composite, 
+                label, 
+                (w*idx + 10, 30), 
+                cv2.FONT_HERSHEY_SIMPLEX, 
+                0.8, 
+                (255, 255, 255), 
+                2
+            )
+        
+        
+        
+        # Tüm görselleştirmeleri kaydet
+        cv2.imwrite(full_path + str(i + 1).zfill(3) + '_input.png', defect)
+        cv2.imwrite(full_path + str(i + 1).zfill(3) + '_gt.png', target)
+        cv2.imwrite(full_path + str(i + 1).zfill(3) + '_heatmap.png', colored_heatmap)
+        cv2.imwrite(full_path + str(i + 1).zfill(3) + '_contours.png', defect_with_contours)
+        cv2.imwrite(full_path + str(i + 1).zfill(3) + '_circles.png', defect_with_circles)
+        cv2.imwrite(full_path + str(i + 1).zfill(3) + '_overlay.png', overlay)
+        cv2.imwrite(full_path + str(i + 1).zfill(3) + '_composite.png', composite)
+        cv2.imwrite(full_path + str(i + 1).zfill(3) + '_binary_mask.png', binary_mask)
+
+      return image_auroc, image_ap, pixel_auroc, pixel_ap, pixel_pro
