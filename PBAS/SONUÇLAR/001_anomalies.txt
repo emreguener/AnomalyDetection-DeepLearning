@@ -1,0 +1,16 @@
+Image: 001
+Threshold used: 0.8
+Total anomalies detected: 1
+Overall F1 Score: 0.5256
+Overall Precision: 0.3967
+Overall Recall: 0.7785
+
+Anomaly #1:
+  Center: (126, 176)
+  Radius: 81 pixels
+  Area: 5470.5 pixels²
+  Mean score: 0.9233
+  F1 Score: 0.5255
+  Precision: 0.7166
+  Recall: 0.4148
+
