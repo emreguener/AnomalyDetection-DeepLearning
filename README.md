@@ -1,152 +1,126 @@
-# AnomalyDetection-DeepLearning
+# 📊 AnomalyDetection-DeepLearning
 
-Anomaly Detection with Deep Learning
-
-Bu repository, çeşitli derin öğrenme modellerini kullanarak endüstriyel anomali tespiti için uygulamalar içermektedir.
-
-## Setup
-
-### Gerekli Paketler
-
-```bash
-Python==3.10
-torch==1.13.0
-torchvision==0.14.0
-tifffile==2021.7.30
-tqdm==4.56.0
-scikit-learn==1.2.2
-```
-
-### Mvtec AD Değerlendirme Paketleri
-
-```bash
-numpy==1.18.5
-Pillow==7.0.0
-scipy==1.7.1
-tabulate==0.8.7
-tifffile==2021.7.30
-tqdm==4.56.0
-```
-
-## Veri Seti Yapısı
-
-Tüm modeller için genel veri seti yapısı aşağıdaki gibi olmalıdır:
-
-```bash
-dataset/
-├── train/
-│   └── good/         # Sadece normal (kusursuz) örnekler
-├── test/
-│   ├── good/         # Normal test örnekleri
-│   └── defect/       # Kusurlu test örnekleri (anomaliler)
-└── ground_truth/
-    └── defect/       # Anomaliler için maske görüntüleri (*_mask.jpg)
-```
+Bu depo, ahşap yüzeylerdeki kusurları tespit etmek için derin öğrenme tabanlı farklı modelleri kullanarak anomali tespiti yapar. MVTEC AD veri setinin sadece **wood** alt veri kümesi kullanılmıştır.
 
 ---
 
-## EfficientAD
-
-EfficientAD, gerçek zamanlı uygulamalarda kullanılabilen, hızlı ve doğru anomali tespiti yapabilen bir derin öğrenme modelidir. Model, öğretmen-öğrenci mimarisi ve otokodlayıcı kullanarak hem yapısal hem de mantıksal anomalileri tespit edebilmektedir.
-
-### Modeli Çalıştırma Adımları
+## 🔗 Repo Klonlama ve Ortam Kurulumu
 
 ```bash
-1. Google Colab'da EfficientAD_13_05.ipynb dosyasını açın
-2. GPU hızlandırıcıyı etkinleştirin:
-   Çalışma Zamanı > Çalışma zamanı türünü değiştir > GPU
-3. Google Drive'ı bağlayın:
+git clone https://github.com/emreguener/AnomalyDetection-DeepLearning.git
+cd AnomalyDetection-DeepLearning
+pip install -r requirements.txt
 ```
+
+> **Not:** Google Colab ortamında çalışacak şekilde notebook dosyaları optimize edilmiştir.
+
+---
+
+## 📂 Veri Seti Yapısı
+
+Bu projede yalnızca **wood** alt veri kümesi kullanılmaktadır. Lütfen aşağıdaki dizin yapısına dikkat ederek veri setini yerleştiriniz:
+
+```
+Wood_dataset/
+├── wood/
+│   ├── train/
+│   │   └── good/
+│   ├── test/
+│   │   ├── good/
+│   │   └── defect/
+│   └── ground_truth/
+│       └── defect/
+```
+
+**Veri Yolu örneği (notebook içinde):**
 
 ```python
-from google.colab import drive
-drive.mount('/content/drive')
-import os
-os.chdir('/content/drive/MyDrive/')
-```
-
-```bash
-4. Dosya yollarını kendi dizin yapınıza göre güncelleyin
-5. Notebook hücrelerini sırayla çalıştırın
+dataset_path = "/content/drive/MyDrive/Wood_dataset/wood"
 ```
 
 ---
 
-## FastFlow
+## 📄 Gerekli Kütüphaneler (requirements.txt)
 
-FastFlow, normal verilerin özellik dağılımını öğrenerek anomalileri aykırılık olarak tespit eden bir yaklaşım sunar. Gerçek zamanlı anomali tespiti için optimize edilmiştir.
-
-### Modeli Çalıştırma Adımları
-
-```bash
-- FastFlow klasörü altındaki notebook dosyasını açın
-- Colab veya lokal ortamda çalıştırabilirsiniz
-- Veri yollarını kendi klasör yapınıza göre ayarlayın
-- Tüm adımlar kod içerisinde yorumlarla belirtilmiştir
+```txt
+Pillow
+collections
+functools
+glob
+google
+joblib
+main
+matplotlib
+models
+numpy
+opencv-python
+optuna
+os
+pandas
+pickle
+random
+scikit-learn
+seaborn
+shutil
+skimage
+sys
+tifffile
+time
+torch
+torchvision
+tqdm
+traceback
+utils
+warnings
+xgboost
+yaml
+zipfile
+git+https://github.com/VLL-HD/FrEIA.git
 ```
 
 ---
 
-## INP\_FORMER
+## 🔧 Modellerin Kullanımı (Notebook Yolları)
 
-INP\_FORMER, Transformer tabanlı bir yaklaşımla endüstriyel anomali tespiti yapmayı hedefler. Görsel dizi öğrenme mantığını kullanarak karmaşık yapıları algılayabilir.
+Her modelin .ipynb dosyası ayrıdır ve tam çalışabilir haldedir.
 
-### Modeli Çalıştırma Adımları
+### 1. 🧠 EfficientAD
 
-```bash
-- INP_FORMER klasöründe inp_former_10_05.ipynb dosyasını inceleyin
-- Ortamınızın gerekli paketleri içerdiğinden emin olun
-- Kendi verisetinize göre parametreleri ayarlayarak notebook'u çalıştırın
-```
+* Student-Teacher yapısı ile anomaly segmentasyonu
+* [EfficientAD\_Run.ipynb](./EfficientAD_Run.ipynb)
 
----
+### 2. ⚡ FastFlow
 
-## PBAS
+* Normal yüzeylerin akış haritalarını tersine çevirerek kusur tespiti
+* [FastFlow\_Run.ipynb](./FastFlow_Run%20%281%29.ipynb)
 
-PBAS (Pixel-Based Adaptive Segmenter), geleneksel görüntü işleme teknikleriyle geliştirilmiş bir anomali tespiti yaklaşımıdır. Hafif yapısıyla çok düşük sistemlerde bile çalışabilir.
+### 3. 🔬 INP-Former
 
-### Modeli Çalıştırma Adımları
+* Transformer tabanlı bilgi yoğunlaştırma
+* [INP\_Former\_Run.ipynb](./INP_Former_Run%20%281%29.ipynb)
 
-```bash
-- PBAS klasörü altındaki script dosyalarını inceleyin
-- Her adımda girdi-çıktı yollarını doğru belirleyin
-- Çalıştırmak için: python main.py
-```
+### 4. 🧪 PBAS
 
----
+* Patch-tabanlı skor üretimi
+* [PBAS\_Run.ipynb](./PBAS_Run%20%281%29.ipynb)
 
-## SimpleNet
+### 5. 🔹 SimpleNet
 
-SimpleNet, minimal bir sinir ağı modeliyle baseline anomali tespiti performansı sağlamak için tasarlanmıştır. Anlaması ve modifiye etmesi kolay bir yapıya sahiptir.
+* Basit ama etkili segmentasyon modeli
+* [SimpleNet\_Run.ipynb](./SimpleNet_Run.ipynb)
 
-### Modeli Çalıştırma Adımları
+### 6. 🔸 UniNet
 
-```bash
-- SimpleNet/SimpleNetRunpynb.ipynb notebook'unu açın
-- Verisetini belirttikten sonra, tüm kod sırasıyla çalıştırılabilir
-- Basit yapısı sayesinde öğrenme amaçlı kullanımlar için uygundur
-```
+* DFS + Student + Teacher birleşimli çok bölümlü model
+* [UniNet\_Run.ipynb](./UniNet_Run.ipynb)
 
 ---
 
-## UniNet
+## ⚠️ Uyarılar
 
-UniNet, çoklu anomaly type'ları için tek bir çözüm sunan esnek bir mimaridir. Birleştirilmiş öğrenme yetenekleri sayesinde farklı alanlarda uygulanabilir.
-
-### Modeli Çalıştırma Adımları
-
-```bash
-- UniNet klasöründeki script dosyalarını çalıştırın
-- GPU desteklidir, CUDA uyumlu ortamlarda kullanım tavsiye edilir
-- Parametreleri README veya script içinde belirtilen şekilde düzenleyin
-```
+* Kodlar yalnızca `wood` alt veri kümesiyle çalışacak şekilde optimize edilmelidir.
+* Tüm modeller aynı klasör yapısını bekler. Lütfen veri yollarını notebook içinde doğrulayın.
 
 ---
 
-## Katkıda Bulunma
 
-Proje katkılarına açıktır. Her model klasörü kendi özgün kod yapısına sahiptir. Yeni modeller ekleyebilir veya mevcut modelleri geliştirebilirsiniz.
-
-Pull request'leriniz değerlendirilmek üzere beklenmektedir.
-
----
