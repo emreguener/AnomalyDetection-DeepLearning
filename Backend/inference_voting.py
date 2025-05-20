@@ -1,15 +1,15 @@
 import os
 from inference_uninet import run_uninet_inference
 from inference_fastflow import run_fastflow_inference
-from inference import run_inference_on_image
+from inference_efficient import run_inference_efficient
 
-def run_voting_inference(input_path, img_id, output_dir):
+def run_voting_inference(input_path, img_id, output_dir,overlay_f,overlay_u,overlay_e):
     config_path = os.path.join("Model", "FastFlow", "config.yaml")
     ckpt_path = os.path.join("Model", "FastFlow", "best_model.pth")
 
-    result_uninet = run_uninet_inference(input_path, img_id, output_dir)
-    result_fastflow = run_fastflow_inference(input_path, img_id, config_path, ckpt_path, output_dir)
-    result_efficientad = run_inference_on_image(input_path, img_id, output_dir)
+    result_uninet = run_uninet_inference(input_path, img_id, output_dir,overlay_u)
+    result_fastflow = run_fastflow_inference(input_path, img_id, config_path, ckpt_path, output_dir,overlay_f)
+    result_efficientad = run_inference_efficient(input_path, img_id, output_dir,overlay_e)
 
     # Voting: 2 veya daha fazla Anomali varsa Anomali
     votes = [result_uninet["prediction"], result_fastflow["prediction"], result_efficientad["prediction"]]

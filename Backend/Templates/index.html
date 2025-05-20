@@ -998,6 +998,8 @@
                     <option value="efficientad">EfficientAD</option>
                     <option value="uninet">UniNet</option>
                     <option value="fastflow">FastFlow</option>
+                    <option value="pbas">PBAS</option>
+                    <option value="inp-former">INP-Former</option>
                     <option value="voting">All Models</option>
                   </select>
                   <div class="model-info" id="model-info">
@@ -1199,6 +1201,7 @@
   <footer>
     <div class="container">
       <div class="footer-links">
+        <a href="{{ url_for('aboutus') }}" class="footer-link">Hakkımızda</a>
         <a href="#" class="footer-link">Gizlilik Politikası</a>
         <a href="#" class="footer-link">Kullanım Şartları</a>
         <a href="#" class="footer-link">İletişim</a>
@@ -1230,6 +1233,8 @@
       'efficientad': 'EfficientAD, ahşap yüzey kusur tespiti için yüksek doğruluk ve makul işlem süresi ile optimize edilmiştir.',
       'uninet': 'UniNet, karmaşık anomali türlerini tespit etmede yüksek hassasiyete sahip, detaylı analiz sunar.',
       'fastflow': 'FastFlow, hızlı işlem gerektiren durumlarda uygun, gerçek zamanlı analiz için optimize edilmiştir.',
+      'pbas': 'PBAS, geleneksel ve öğrenmeye dayalı yöntemleri harmanlayarak düşük kaynak tüketimi ile güvenilir anomali haritaları üretir.',
+      'inp-former': 'INP-Former, görsel anomali tespitinde dikkat mekanizmaları ile uzamsal bağlamı etkili biçimde değerlendirir ve yüksek kaliteli segmentasyon sunar.',
       'voting': 'Tüm modellerin birleştirilmiş tahminleri en yüksek doğruluk oranını sağlar, ancak daha uzun sürer.'
     };
 

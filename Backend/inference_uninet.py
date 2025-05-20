@@ -15,7 +15,7 @@ sys.path.append(BACKEND_DIR)
 model = load_model_from_ckpt(c, device)
 
 
-def run_uninet_inference(img_path, img_id, output_dir):
+def run_uninet_inference(img_path, img_id, output_dir,overlay=2.35):
     # Görüntüleri hazırla
     preprocessed_image = preprocess_input_image(img_path)
     image_tensor, _ = transform_image(preprocessed_image, c)
@@ -26,7 +26,7 @@ def run_uninet_inference(img_path, img_id, output_dir):
     label = "Anomali" if score > 2 else "Normal"
 
     # Görsel çıktıları oluştur
-    overlay, heatmap = create_overlay(preprocessed_image, anomaly_map)
+    overlay, heatmap = create_overlay(preprocessed_image, anomaly_map,overlay)
 
     # Kayıt dizinini oluştur
     os.makedirs(output_dir, exist_ok=True)

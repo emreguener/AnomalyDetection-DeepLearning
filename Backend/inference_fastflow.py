@@ -8,7 +8,7 @@ from helper_fastflow import (
 )
 
 
-def run_fastflow_inference(image_path, image_id, config_path, ckpt_path, output_dir, threshold=-0.3205):
+def run_fastflow_inference(image_path, image_id, config_path, ckpt_path, output_dir, threshold=-0.3205, overlay_threshold=0.55):
     device = "cuda" if os.environ.get("CUDA_VISIBLE_DEVICES") else "cpu"
 
     # Model ve konfigürasyonu yükle
@@ -23,7 +23,7 @@ def run_fastflow_inference(image_path, image_id, config_path, ckpt_path, output_
     label = "Anomali" if score > threshold else "Normal"
 
     # Görsel çıktıları oluştur
-    overlay, heatmap = generate_heatmap(original_image, anomaly_map, 0.55)
+    overlay, heatmap = generate_heatmap(original_image, anomaly_map, overlay_threshold)
 
     # Kayıt dizinini oluştur
     os.makedirs(output_dir, exist_ok=True)

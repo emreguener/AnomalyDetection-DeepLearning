@@ -100,7 +100,7 @@ def predict(model, tensor, c):
 
 
 # === Isı Haritası ve Overlay Oluşturma ===
-def create_overlay(original_image, anomaly_map, threshold=2.35):
+def create_overlay(original_image, anomaly_map, threshold):
     orig_np = np.array(original_image.convert('RGB'))
     anomaly_map = cv2.resize(anomaly_map, (256, 256))
     heatmap = cv2.normalize(anomaly_map, None, 0, 255, cv2.NORM_MINMAX).astype('uint8')

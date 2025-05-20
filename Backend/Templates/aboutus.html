@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hakkımızda - Ahşap Anomali Tespiti Sistemi</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --primary: #f97316;
+      --primary-light: #fb923c;
+      --primary-dark: #ea580c;
+      --secondary: #475569;
+      --light: #fff7ed;
+      --dark: #431407;
+      --success: #10b981;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --border-radius: 8px;
+      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      --font-main: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      --bg-light: #fff7ed;
+      --bg-medium: #ffedd5;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: var(--font-main);
+      line-height: 1.6;
+      color: var(--dark);
+      background-color: var(--bg-light);
+      padding: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 20px;
+      width: 100%;
+    }
+
+    header {
+      background-color: white;
+      box-shadow: var(--shadow);
+      padding: 1rem 0;
+      margin-bottom: 2rem;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    header .container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .logo-container {
+      display: flex;
+      align-items: center;
+    }
+
+    header h1 {
+      color: var(--primary);
+      font-size: 1.8rem;
+      margin: 0;
+    }
+
+    .logo {
+      margin-right: 15px;
+      font-size: 1.8rem;
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      background-color: rgba(249, 115, 22, 0.1);
+      border-radius: 50%;
+    }
+
+    .language-selector {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .language-btn {
+      background: none;
+      border: 1px solid #e2e8f0;
+      border-radius: var(--border-radius);
+      padding: 5px 12px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .language-btn.active {
+      background-color: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    .language-btn:hover:not(.active) {
+      background-color: #f8fafc;
+    }
+
+    main {
+      flex: 1;
+      padding-bottom: 2rem;
+    }
+
+    .card {
+      background-color: white;
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow);
+      margin-bottom: 2rem;
+      overflow: hidden;
+      border-top: 4px solid var(--primary);
+    }
+
+    .card-header {
+      padding: 1.25rem;
+      border-bottom: 1px solid #e2e8f0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .card-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--dark);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .card-title i {
+      color: var(--primary);
+    }
+
+    .card-body {
+      padding: 1.5rem;
+    }
+
+    footer {
+      background-color: white;
+      padding: 1.5rem 0;
+      margin-top: auto;
+      border-top: 1px solid #e2e8f0;
+    }
+
+    footer .container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 20px;
+    }
+
+    .footer-link {
+      color: var(--secondary);
+      text-decoration: none;
+      font-size: 0.9rem;
+    }
+
+    .footer-link:hover {
+      color: var(--primary);
+      text-decoration: underline;
+    }
+
+    .copyright {
+      color: var(--secondary);
+      font-size: 0.9rem;
+    }
+    
+    /* Hakkımızda sayfası özellikleri */
+    .about-content {
+      margin-bottom: 2rem;
+    }
+    
+    .about-content p {
+      margin-bottom: 1.2rem;
+      font-size: 1rem;
+    }
+    
+    .about-content h3 {
+      margin: 1.8rem 0 1rem;
+      color: var(--primary-dark);
+      font-size: 1.3rem;
+      border-bottom: 1px solid #f1f5f9;
+      padding-bottom: 0.5rem;
+    }
+    
+    .feature-list {
+      list-style-type: none;
+      margin: 1.5rem 0;
+    }
+    
+    .feature-list li {
+      margin-bottom: 0.8rem;
+      padding-left: 1.5rem;
+      position: relative;
+    }
+    
+    .feature-list li i {
+      position: absolute;
+      left: 0;
+      top: 0.3rem;
+      color: var(--primary);
+    }
+    
+    .team-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1.5rem;
+      margin-top: 2rem;
+    }
+    
+    .team-member {
+      background-color: white;
+      border-radius: var(--border-radius);
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      border: 1px solid #e2e8f0;
+      transition: all 0.3s ease;
+    }
+    
+    .team-member:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+    
+    .member-photo {
+      height: 200px;
+      background-color: #f8fafc;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    
+    .member-photo i {
+      font-size: 4rem;
+      color: #cbd5e1;
+    }
+    
+    .member-info {
+      padding: 1.2rem;
+    }
+    
+    .member-name {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--dark);
+      margin-bottom: 0.5rem;
+    }
+    
+    .member-title {
+      font-size: 0.9rem;
+      color: var(--primary);
+      margin-bottom: 0.8rem;
+    }
+    
+    .member-description {
+      font-size: 0.95rem;
+      color: var(--secondary);
+      line-height: 1.5;
+    }
+    
+    .member-social {
+      display: flex;
+      gap: 0.8rem;
+      margin-top: 1rem;
+    }
+    
+    .social-link {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background-color: #f1f5f9;
+      color: var(--secondary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s ease;
+    }
+    
+    .social-link:hover {
+      background-color: var(--primary);
+      color: white;
+      transform: translateY(-2px);
+    }
+    
+    .tech-stack {
+      margin-top: 2rem;
+      padding: 1.5rem;
+      background-color: #f8fafc;
+      border-radius: var(--border-radius);
+      border: 1px solid #e2e8f0;
+    }
+    
+    .tech-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--dark);
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .tech-title i {
+      color: var(--primary);
+    }
+    
+    .tech-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    
+    .tech-item {
+      padding: 0.5rem 1rem;
+      background-color: white;
+      border-radius: 20px;
+      font-size: 0.9rem;
+      color: var(--secondary);
+      border: 1px solid #e2e8f0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .tech-item i {
+      color: var(--primary-light);
+    }
+    
+    .about-nav {
+      display: flex;
+      justify-content: center;
+      margin: 2rem 0;
+    }
+    
+    .nav-btn {
+      padding: 0.6rem 1.5rem;
+      background-color: var(--bg-medium);
+      border: 1px solid #fed7aa;
+      border-radius: var(--border-radius);
+      font-size: 0.95rem;
+      color: var(--primary-dark);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-decoration: none;
+      margin: 0 0.5rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .nav-btn:hover {
+      background-color: var(--primary-light);
+      color: white;
+      border-color: var(--primary);
+    }
+    
+    @media (max-width: 768px) {
+      .team-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      footer .container {
+        flex-direction: column;
+        gap: 1rem;
+      }
+      
+      .footer-links {
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+      
+      .card-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+      }
+      
+      .language-selector {
+        align-self: flex-end;
+      }
+      
+      .about-nav {
+        flex-direction: column;
+        gap: 0.8rem;
+      }
+      
+      .nav-btn {
+        width: 100%;
+        justify-content: center;
+        margin: 0;
+      }
+    }
+    .model-performance-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        margin-top: 20px;
+    }
+
+    .model-card {
+        background-color: #1e1e1e;
+        color: #f1f1f1;
+        border: 1px solid #444;
+        padding: 16px;
+        border-radius: 12px;
+        box-shadow: 0 0 8px rgba(0,0,0,0.3);
+        transition: transform 0.2s ease;
+    }
+
+    .model-card:hover {
+        transform: scale(1.03);
+    }
+
+    .model-card h5 {
+        margin-top: 0;
+        font-size: 1.1em;
+        color: #ffd700;
+    }
+
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <div class="logo-container">
+        <div class="logo"><i class="fas fa-search-plus"></i></div>
+        <h1>Ahşap Anomali Tespiti</h1>
+      </div>
+      <div class="language-selector">
+        <button class="language-btn active" data-lang="tr">TR</button>
+        <button class="language-btn" data-lang="en">EN</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="container">
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">
+            <i class="fas fa-info-circle"></i>
+            Hakkımızda
+          </h2>
+        </div>
+        <div class="card-body">
+          <div class="about-content">
+            <p>
+              <strong>Ahşap Anomali Tespiti Sistemi</strong>, doğal malzeme işleme süreçlerinde kalite kontrolün dijitalleştirilmesi amacıyla geliştirilmiş ileri seviye bir yapay zeka uygulamasıdır. Bu sistem, düğüm, çatlak, lif bozulması ve renk tutarsızlığı gibi yüzeysel kusurları otomatik olarak tespit ederek üretim hattında doğruluğu ve verimliliği artırmayı hedeflemektedir.
+            </p>
+
+            <p>
+              2024–2025 döneminde geliştirilen bu çözüm, modern bilgisayarla görme algoritmalarını derin öğrenme tabanlı yöntemlerle entegre ederek, ahşap endüstrisine özel güvenilir ve ölçeklenebilir bir anomali tespit altyapısı sunmaktadır. Yalnızca kusursuz görseller ile eğitilen sistem, daha önce karşılaşmadığı kusurları dahi yüksek doğrulukla tespit edebilmektedir.
+            </p>
+
+            <p>
+              Web tabanlı kullanıcı dostu arayüzü sayesinde, hem teknik bilgiye sahip olmayan kullanıcılar hem de üretim hattı mühendisleri için erişilebilir bir yapı sunar. Görselleştirme araçları, tahmin sonuçlarını net biçimde sunar ve karar süreçlerini hızlandırır.
+            </p>
+
+            <p>
+              Ahşap Anomali Tespiti Sistemi; üretim otomasyonu, kalite güvence süreçleri ve akademik araştırma ortamları için kolayca entegre edilebilecek şekilde esnek bir mimariye sahiptir. Yüksek doğruluk oranı ve detaylı analiz kapasitesi ile geleceğin endüstriyel yapay zeka çözümleri arasında yerini almaktadır.
+            </p>
+          </div>
+
+            <h3>Özelliklerimiz</h3>
+            <ul class="feature-list">
+              <li><i class="fas fa-check-circle"></i> <strong>Çoklu Model Desteği:</strong> EfficientAD, UniNet ve FastFlow gibi son teknoloji anomali tespit algoritmaları</li>
+              <li><i class="fas fa-check-circle"></i> <strong>Ensemble Karar Mekanizması:</strong> Modellerin oy birliği ile daha güvenilir sonuçlar</li>
+              <li><i class="fas fa-check-circle"></i> <strong>Gerçek Zamanlı Analiz:</strong> Saniyeler içinde sonuç alma kapasitesi</li>
+              <li><i class="fas fa-check-circle"></i> <strong>Görselleştirme Araçları:</strong> Isı haritaları ve overlay görüntülerle detaylı analiz</li>
+              <li><i class="fas fa-check-circle"></i> 
+  <strong>Derin Öğrenme ve Geleneksel Makine Öğrenmesi Yöntemlerinin Entegre Edildiği Hibrit Yapı:</strong> 
+  Sistem, derin öğrenmenin güçlü temsil öğrenimi yeteneklerini; geleneksel makine öğrenmesi tekniklerinin yorumlanabilirlik ve düşük örnek ihtiyacı avantajlarıyla birleştirerek daha kararlı ve yüksek doğrulukta anomali tespiti sağlamaktadır.
+</li>
+            </ul>
+            
+            <h3>Ekibimiz</h3>
+            <div class="team-grid">
+              <div class="team-member">
+                <div class="member-photo">
+                  <i class="fas fa-user-circle"></i>
+                </div>
+                <div class="member-info">
+                  <h4 class="member-name">Baturhan Çağatay</h4>
+                  <div class="member-title">Yapay Zeka Mühendisi </div>
+                  <p class="member-description">
+                    Makine öğrenme algoritmaları ve görüntü işleme alanında uzmanlaşmış, anomali tespiti modelleri üzerinde deneyimli yazılım mühendisi.Sistemin web tabanlı arayüzünün tasarımı ve backend entegrasyonundan sorumludur.
+                  </p>
+                  <div class="member-social">
+                    <a href="https://www.linkedin.com/in/baturhancagatay/" class="social-link"><i class="fab fa-linkedin-in"></i></a>
+                    <a href="https://github.com/BaturhanCagatay" class="social-link"><i class="fab fa-github"></i></a>
+                    <a href="#" class="social-link"><i class="fas fa-envelope"></i></a>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="team-member">
+                <div class="member-photo">
+                  <i class="fas fa-user-circle"></i>
+                </div>
+                <div class="member-info">
+                  <h4 class="member-name">Emre Güner</h4>
+                  <div class="member-title">Yapay Zeka Mühendisi</div>
+                  <p class="member-description">
+                    Makine öğrenme algoritmaları ve görüntü işleme alanında uzmanlaşmış, anomali tespiti modelleri üzerinde deneyimli yazılım mühendisi
+                  </p>
+                  <div class="member-social">
+                    <a href="https://www.linkedin.com/in/emregunerr/" class="social-link"><i class="fab fa-linkedin-in"></i></a>
+                    <a href="https://github.com/emreguener" class="social-link"><i class="fab fa-github"></i></a>
+                    <a href="#" class="social-link"><i class="fas fa-envelope"></i></a>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <h3>Teknoloji Altyapımız</h3>
+            <div class="tech-stack">
+              <h4 class="tech-title"><i class="fas fa-cogs"></i> Kullandığımız Teknolojiler</h4>
+              <div class="tech-list">
+                <div class="tech-item"><i class="fab fa-python"></i> Python</div>
+                <div class="tech-item"><i class="fas fa-brain"></i> PyTorch</div>
+                <div class="tech-item"><i class="fas fa-code"></i> TensorFlow</div>
+                <div class="tech-item"><i class="fab fa-js"></i> JavaScript</div>
+                <div class="tech-item"><i class="fab fa-html5"></i> HTML5</div>
+                <div class="tech-item"><i class="fab fa-css3-alt"></i> CSS3</div>
+                <div class="tech-item"><i class="fas fa-flask"></i> Flask</div>
+                <div class="tech-item"><i class="fas fa-database"></i> SQLite</div>
+                <div class="tech-item"><i class="fas fa-image"></i> OpenCV</div>
+                
+              </div>
+              <br>
+               <h4 class="tech-title"><i class="fas fa-cogs"></i> Kullandığımız Modeller</h4>
+                <!-- EfficientAD -->
+                <div class="model-card">
+                    <h5>EfficientAD</h5>
+                    <br>
+                    <p><strong>F1 Score:</strong> 0.8904</p>
+                    <p><strong>AUROC:</strong> 0.9171</p>
+                    <p><strong>Precision:</strong> 0.8553</p>
+                    <p><strong>Recall: </strong>0.9286</p>
+
+                </div>
+                <br>
+                <!-- FastFlow -->
+                <div class="model-card">
+                    <h5>FastFlow</h5>
+                    <br>
+                    <p><strong>F1 Score: </strong> 0.8667</p>
+                    <p><strong>AUROC: </strong> 0.9544</p>
+                    <p><strong>Pixel-Level IoU: </strong> 0.4965</p>
+                </div>
+                <br>
+
+                <!-- UniNet -->
+                <div class="model-card">
+                    <h5>UniNet</h5>
+                    <br>
+                    <p><strong>F1 Score: </strong>0.898</p>
+                    <p><strong>AUROC:</strong> 0.917</p>
+                    <p><strong>Image-Level IoU:</strong> 0.8148</p>
+                </div>
+                <br>
+                <!--PBAS-->
+                <div class="model-card">
+                    <h5>PBAS</h5>
+                    <br>
+                    <p><strong>F1 Score: </strong> 0.8889</p>
+                    <p><strong>AUROC: </strong> 0.9191</p>
+                    <p><strong>Precision: </strong> 0.8767</p>
+                    <p><strong>Recall: </strong> 0.9014</p>
+                </div>
+                <br>
+
+                <!--INP-FORMER-->
+                <div class="model-card">
+                    <h5>INP-Former</h5>
+                    <br>
+                    <p><strong>F1 Score: </strong> 0.8116</p>
+                    <p><strong>AUROC: </strong> 0.9385</p>
+                </div>
+                <br>
+
+                <!--SimpleNET-->
+                <div class="model-card">
+                    <h5>SimpleNet</h5>
+                    <br>
+                    <p><strong>F1 Score: </strong> 0.97</p>
+                    <p><strong>Accuracy: </strong> 0.96</p>
+                    <p><strong>Precision: </strong> 0.96</p>
+                    <p><strong>Recall: </strong> 0.97</p>
+                </div>
+                <br>
+
+
+            </div>
+                           
+            </div>
+            
+            <h3>Misyonumuz</h3>
+            <p>
+              Ahşap endüstrisinde kalite kontrolünü daha erişilebilir, daha hızlı ve daha güvenilir hale getirerek israfı azaltmak, verimliliği artırmak ve sürdürülebilir ahşap üretimini desteklemek.
+            </p>
+            
+            <div class="about-nav">
+              <a href="{{ url_for('index') }}" class="nav-btn"><i class="fas fa-home"></i> Ana Sayfa</a>
+              <a href="#" class="nav-btn"><i class="fas fa-envelope"></i> Bize Ulaşın</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="container">
+      <div class="footer-links">
+        <a href="index.html" class="footer-link">Ana Sayfa</a>
+        <a href="#" class="footer-link">Gizlilik Politikası</a>
+        <a href="#" class="footer-link">Kullanım Şartları</a>
+        <a href="#" class="footer-link">İletişim</a>
+        <a href="#" class="footer-link">Yardım</a>
+      </div>
+      <div class="copyright">
+        &copy; 2025 Ahşap Anomali Tespiti Sistemi
+      </div>
+    </div>
+  </footer>
+  
+  <script>
+    // Dil değiştirme işlemleri
+    const languageButtons = document.querySelectorAll('.language-btn');
+    languageButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        languageButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        
+        const lang = btn.dataset.lang;
+        console.log('Dil değiştirildi:', lang);
+        // Burada dil değiştirme API'si çağrılabilir
+      });
+    });
+  </script>
+</body>
+</html>
