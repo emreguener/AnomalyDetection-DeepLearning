@@ -26,7 +26,7 @@ def get_argparse():
     parser.add_argument('-o', '--output_dir', default='output/1')
     parser.add_argument('-m', '--model_size', default='small',
                         choices=['small', 'medium'])
-    parser.add_argument('-w', '--weights', default='/content/drive/MyDrive/EfficientAD_/models/teacher_small.pth')
+    parser.add_argument('-w', '--weights', default='/content/AnomalyDetection-DeepLearning/EfficientAD/models/teacher_small.pth')
     parser.add_argument('-i', '--imagenet_train_path',
                         default='none',
                         help='Set to "none" to disable ImageNet' +
