@@ -113,6 +113,14 @@ Her modelin .ipynb dosyası ayrıdır ve tam çalışabilir haldedir.
 
 * DFS + Student + Teacher birleşimli çok bölümlü model
 * [UniNet\_Run.ipynb](./UniNet_Run.ipynb)
+---
+!python '/content/UniNet/main.py' \
+  --dataset "MVTec AD" \
+  --setting oc \
+  --train_and_test_all \
+  --is_saved \
+  --save_dir "./results" \
+  --epoch 90
 
 ---
 
