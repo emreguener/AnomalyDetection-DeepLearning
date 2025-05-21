@@ -101,10 +101,61 @@ Her modelin `.ipynb` dosyası ayrıdır ve tam çalışabilir haldedir.
 ### 4. 🧪 PBAS
 - Patch-tabanlı skor üretimi  
 - [`PBAS_Run.ipynb`](./PBAS_Run%20%281%29.ipynb)
-
+  <pre><code>python /content/pbas/main.py \
+  --gpu 0 \
+  --seed 0 \
+  net \
+    -b wideresnet50 \
+    -le layer2 \
+    -le layer3 \
+    --pretrain_embed_dimension 1536 \
+    --target_embed_dimension 1536 \
+    --patchsize 3 \
+    --meta_epochs 20 \
+    --eval_epochs 5 \
+    --dsc_layers 2 \
+    --dsc_hidden 1024 \
+    --pre_proj 1 \
+    --k 0.25 \
+  dataset \
+    --batch_size 8 \
+    --resize 256 \
+    --imagesize 256 \
+    {flags} mvtec {datapath}
+"""</code></pre>
 ### 5. 🔹 SimpleNet
 - Basit ama etkili segmentasyon modeli  
 - [`SimpleNet_Run.ipynb`](./SimpleNet_Run.ipynb)
+<pre><code>```
+!python /content/simplenet/main.py \
+--gpu 0 \
+--seed 0 \
+--log_group simplenet_wood_fast \
+--log_project WoodOnly \
+--results_path results \
+--run_name wood_fast_run \
+net \
+-b wideresnet50 \
+-le layer2 \
+-le layer3 \
+--pretrain_embed_dimension 1024 \
+--target_embed_dimension 1024 \
+--patchsize 3 \
+--meta_epochs 15 \
+--embedding_size 256 \
+--gan_epochs 5 \
+--noise_std 0.015 \
+--dsc_hidden 768 \
+--dsc_layers 2 \
+--dsc_margin .5 \
+--pre_proj 2 \
+dataset \
+--batch_size 8 \
+--resize 256 \
+--imagesize 256 \
+-d wood \
+mvtec /content/drive/MyDrive/wood_dataset
+```</code></pre>
 
 ### 6. 🔸 UniNet
 - DFS + Student + Teacher birleşimli çok bölümlü model  
