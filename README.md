@@ -82,46 +82,32 @@ git+https://github.com/VLL-HD/FrEIA.git
 
 ## 🔧 Modellerin Kullanımı (Notebook Yolları)
 
-Her modelin .ipynb dosyası ayrıdır ve tam çalışabilir haldedir.
+Her modelin `.ipynb` dosyası ayrıdır ve tam çalışabilir haldedir.
 
 ### 1. 🧠 EfficientAD
-
-* Student-Teacher yapısı ile anomaly segmentasyonu
-* [EfficientAD\_Run.ipynb](./EfficientAD_Run.ipynb)
+- Student-Teacher yapısı ile anomaly segmentasyonu  
+- [`EfficientAD_Run.ipynb`](./EfficientAD/EfficientAD_Run.ipynb)
 
 ### 2. ⚡ FastFlow
-
-* Normal yüzeylerin akış haritalarını tersine çevirerek kusur tespiti
-* [FastFlow\_Run.ipynb](./FastFlow_Run%20%281%29.ipynb)
+- Normal yüzeylerin akış haritalarını tersine çevirerek kusur tespiti  
+- [`FastFlow_Run.ipynb`](./FastFlow_Run%20%281%29.ipynb)
 
 ### 3. 🔬 INP-Former
-
-* Transformer tabanlı bilgi yoğunlaştırma
-* [INP\_Former\_Run.ipynb](./INP_Former_Run%20%281%29.ipynb)
+- Transformer tabanlı bilgi yoğunlaştırma  
+- [`INP_Former_Run.ipynb`](./INP_Former_Run%20%281%29.ipynb)
 
 ### 4. 🧪 PBAS
-
-* Patch-tabanlı skor üretimi
-* [PBAS\_Run.ipynb](./PBAS_Run%20%281%29.ipynb)
+- Patch-tabanlı skor üretimi  
+- [`PBAS_Run.ipynb`](./PBAS_Run%20%281%29.ipynb)
 
 ### 5. 🔹 SimpleNet
-
-* Basit ama etkili segmentasyon modeli
-* [SimpleNet\_Run.ipynb](./SimpleNet_Run.ipynb)
+- Basit ama etkili segmentasyon modeli  
+- [`SimpleNet_Run.ipynb`](./SimpleNet_Run.ipynb)
 
 ### 6. 🔸 UniNet
-
-* DFS + Student + Teacher birleşimli çok bölümlü model
-* [UniNet\_Run.ipynb](./UniNet_Run.ipynb)
----
-!python '/content/UniNet/main.py' \
-  --dataset "MVTec AD" \
-  --setting oc \
-  --train_and_test_all \
-  --is_saved \
-  --save_dir "./results" \
-  --epoch 90
-
+- DFS + Student + Teacher birleşimli çok bölümlü model  
+- [`UniNet_Run.ipynb`](./UniNet_Run.ipynb)
+<pre><code>```bash !python '/content/UniNet/main.py' \ --dataset "MVTec AD" \ --setting oc \ --train_and_test_all \ --is_saved \ --save_dir "./results" \ --epoch 90 ``` </code></pre>
 ---
 
 ## ⚠️ Uyarılar
