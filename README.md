@@ -87,10 +87,12 @@ Her modelin `.ipynb` dosyası ayrıdır ve tam çalışabilir haldedir.
 ### 1. 🧠 EfficientAD
 - Student-Teacher yapısı ile anomaly segmentasyonu  
 - [`EfficientAD_Run.ipynb`](./EfficientAD/EfficientAD_Run.ipynb)
+<pre><code>!python '/content/drive/MyDrive/EfficientAD_/efficientad.py' --mvtec_ad_path "/content/drive/MyDrive/wood_otsu" --subdataset "wood" --train_steps 1500 -o "/content/drive/MyDrive/EfficientAD_/Deneme 5 Ağırlıklar"</code></pre>
 
 ### 2. ⚡ FastFlow
 - Normal yüzeylerin akış haritalarını tersine çevirerek kusur tespiti  
-- [`FastFlow_Run.ipynb`](./FastFlow_Run%20%281%29.ipynb)
+- [`FastFlow_Run.ipynb`](./FastFlow_Run%20%281%29.ipynb) 
+  <pre><code> !python /content/FastFlow/main.py --cfg /content/FastFlow/configs/densenet121.yaml --data /content/fast_flow_dataset --cat wood</code></pre>
 
 ### 3. 🔬 INP-Former
 - Transformer tabanlı bilgi yoğunlaştırma  
@@ -107,7 +109,7 @@ Her modelin `.ipynb` dosyası ayrıdır ve tam çalışabilir haldedir.
 ### 6. 🔸 UniNet
 - DFS + Student + Teacher birleşimli çok bölümlü model  
 - [`UniNet_Run.ipynb`](./UniNet_Run.ipynb)
-<pre><code>```bash !python '/content/UniNet/main.py' \ --dataset "MVTec AD" \ --setting oc \ --train_and_test_all \ --is_saved \ --save_dir "./results" \ --epoch 90 ``` </code></pre>
+<pre><code>!python '/content/UniNet/main.py' \ --dataset "MVTec AD" \ --setting oc \ --train_and_test_all \ --is_saved \ --save_dir "./results" \ --epoch 90 </code></pre>
 ---
 
 ## ⚠️ Uyarılar
