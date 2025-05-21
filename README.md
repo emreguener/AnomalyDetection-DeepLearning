@@ -182,8 +182,8 @@ mvtec /content/drive/MyDrive/wood_dataset
 --train_and_test_all \
 --is_saved \
 --save_dir "./results" \
---dataset_path "/content/drive/MyDrive/WoodAnomaly_Resources/Dataset/Wood Otsu"
- \ --epoch 90 </code></pre>
+--dataset_path "/content/drive/MyDrive/WoodAnomaly_Resources/Dataset/Wood Otsu" \ 
+--epoch 90 </code></pre>
 ---
 
 ## ⚠️ Uyarılar
