@@ -32,7 +32,7 @@ def parsing_args():
     parser.add_argument('--default', default=0.3, type=float, help='the default value of weights.')
     parser.add_argument('--alpha', default=0.01, type=float, help='hyperparameters for weights.')
     parser.add_argument('--beta', default=0.00003, type=float, help='hyperparameters for weights.')
-
+    parser.add_argument('--dataset_path', type=str, default="", help='Root path of the dataset')
     parser.add_argument("--train_and_test_all", action='store_true', default=True,
                         help="for medical domains.")
     parser.add_argument("--is_saved", action='store_true', default=True, help="whether to save model weights.")
