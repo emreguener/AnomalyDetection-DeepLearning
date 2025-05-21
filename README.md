@@ -87,7 +87,8 @@ Her modelin `.ipynb` dosyası ayrıdır ve tam çalışabilir haldedir.
 ### 1. 🧠 EfficientAD
 - Student-Teacher yapısı ile anomaly segmentasyonu  
 - [`EfficientAD_Run.ipynb`](./EfficientAD/EfficientAD_Run.ipynb)
-<pre><code>!python '/content/AnomalyDetection-DeepLearning/EfficientAD/efficientad.py'' --mvtec_ad_path "/content/drive/MyDrive/wood_otsu" --subdataset "wood" --train_steps 1500 -o "/content/drive/MyDrive/EfficientAD_/Deneme 5 Ağırlıklar"</code></pre>
+<pre><code>!python '/content/AnomalyDetection-DeepLearning/EfficientAD/efficientad.py' --mvtec_ad_path "/content/drive/MyDrive/Wood Anomaly /Dataset/Wood Otsu/" --subdataset "wood" --weights '/content/AnomalyDetection-DeepLearning/EfficientAD/models/teacher_small.pth' --train_steps 1500 -o "/EfficientAD_/Deneme 5 Ağırlıklar"
+"</code></pre>
 
 ### 2. ⚡ FastFlow
 - Normal yüzeylerin akış haritalarını tersine çevirerek kusur tespiti  
