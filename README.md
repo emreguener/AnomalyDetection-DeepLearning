@@ -101,7 +101,7 @@ Her modelin `.ipynb` dosyası ayrıdır ve tam çalışabilir haldedir.
 <pre><code>'''
   !python /content/AnomalyDetection-DeepLearning/INP_FORMER/INP_Former_Single_Class.py \
   --dataset MVTec-AD \
-  --data_path /content/drive/MyDrive/wood_dataset \
+  --data_path /content/drive/MyDrive/WoodAnomaly_Resources/Dataset/wood_dataset \
   --item wood \
   --batch_size 8\
   --total_epochs 100 \
@@ -170,7 +170,7 @@ dataset \
 --resize 256 \
 --imagesize 256 \
 -d wood \
-mvtec /content/drive/MyDrive/wood_dataset
+mvtec /content/drive/MyDrive/WoodAnomaly_Resources/Dataset
 ```</code></pre>
 
 ### 6. 🔸 UniNet
