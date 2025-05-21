@@ -92,7 +92,7 @@ Her modelin `.ipynb` dosyası ayrıdır ve tam çalışabilir haldedir.
 ### 2. ⚡ FastFlow
 - Normal yüzeylerin akış haritalarını tersine çevirerek kusur tespiti  
 - [`FastFlow_Run.ipynb`](./FastFlow_Run%20%281%29.ipynb) 
-  <pre><code> !python /content/FastFlow/main.py --cfg /content/FastFlow/configs/densenet121.yaml --data /content/fast_flow_dataset --cat wood</code></pre>
+<pre><code> !python /content/FastFlow/main.py --cfg /content/FastFlow/configs/densenet121.yaml --data /content/fast_flow_dataset --cat wood</code></pre>
 
 ### 3. 🔬 INP-Former
 - Transformer tabanlı bilgi yoğunlaştırma  
@@ -122,7 +122,9 @@ Her modelin `.ipynb` dosyası ayrıdır ve tam çalışabilir haldedir.
     --resize 256 \
     --imagesize 256 \
     {flags} mvtec {datapath}
-"""</code></pre>
+"""
+</code></pre>
+
 ### 5. 🔹 SimpleNet
 - Basit ama etkili segmentasyon modeli  
 - [`SimpleNet_Run.ipynb`](./SimpleNet_Run.ipynb)
@@ -166,7 +168,7 @@ mvtec /content/drive/MyDrive/wood_dataset
 ## ⚠️ Uyarılar
 
 * Kodlar yalnızca `wood` alt veri kümesiyle çalışacak şekilde optimize edilmelidir.
-* Tüm modeller aynı klasör yapısını bekler. Lütfen veri yollarını notebook içinde doğrulayın.
+* Tüm modeller aynı klasör yapısını bekler. Yukarıda gözüken çalışma kodlarında lütfen veri yollarını uygun formatta verin. Veri yollarını notebook içinde doğrulayın.
 
 ---
 
